@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { useApp } from "../../app/AppContext";
+import { audioEngine } from "../../audio/audioEngine";
 import { cn } from "../../lib/cn";
 import type { TestStatus } from "./practice.types";
 import { createTypingWords, TypingCharacter } from "./TypingCharacter";
@@ -121,6 +122,22 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
     return () => observer.disconnect();
   }, [measureCaret]);
 
+  const playInputSound = (nextValue: string) => {
+    if (nextValue.length <= input.length) {
+      return;
+    }
+
+    const index = input.length;
+    const typedCharacter = nextValue[index];
+    audioEngine.play(typedCharacter === target[index] ? "type" : "error");
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const nextValue = event.target.value.replace(/[\r\n]/g, "");
+    playInputSound(nextValue);
+    onInput(nextValue);
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Tab") {
       event.preventDefault();
@@ -167,9 +184,7 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
         autoComplete="off"
         aria-label="Typing input"
         disabled={status === "complete"}
-        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-          onInput(event.target.value.replace(/[\r\n]/g, ""))
-        }
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}

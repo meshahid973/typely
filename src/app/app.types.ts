@@ -11,6 +11,8 @@ export interface AppSettings {
   reducedMotion: boolean;
   liveStats: boolean;
   caretStyle: CaretStyle;
+  soundEnabled: boolean;
+  soundVolume: number;
 }
 
 export interface TestResult {

@@ -1,6 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "../../app/AppContext";
+import { audioEngine } from "../../audio/audioEngine";
 import { IconButton } from "../../components/ui/IconButton";
 import { cn } from "../../lib/cn";
 import { LiveStats } from "./LiveStats";
@@ -22,6 +23,7 @@ export function PracticeScreen() {
   const [configuration, setConfiguration] = useState(initialConfiguration);
   const [refreshing, setRefreshing] = useState(false);
   const refreshTimeout = useRef<number | null>(null);
+  const completedResult = useRef<string | null>(null);
   const handleComplete = useCallback(
     (result: Parameters<typeof addResult>[0]) => addResult(result),
     [addResult],
@@ -36,6 +38,15 @@ export function PracticeScreen() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!test.lastResult || completedResult.current === test.lastResult.id) {
+      return;
+    }
+
+    completedResult.current = test.lastResult.id;
+    audioEngine.play("complete");
+  }, [test.lastResult]);
 
   const resetTest = () => {
     test.reset();

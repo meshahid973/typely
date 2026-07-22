@@ -1,6 +1,8 @@
-import { Check, Moon, MousePointer2, Palette, Sun, Type } from "lucide-react";
+import { Check, Moon, MousePointer2, Palette, Sun, Type, Volume2, VolumeX } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useApp } from "../../app/AppContext";
 import type { AppAccent, AppTheme, CaretStyle } from "../../app/app.types";
+import { audioEngine } from "../../audio/audioEngine";
 import { Panel } from "../../components/ui/Panel";
 import { cn } from "../../lib/cn";
 
@@ -16,6 +18,10 @@ export function SettingsScreen() {
 
   const setTheme = (theme: AppTheme) => updateSettings({ theme });
   const setCaret = (caretStyle: CaretStyle) => updateSettings({ caretStyle });
+  const previewVolume = () => audioEngine.play("click");
+  const volumeStyle = {
+    "--volume": `${settings.soundVolume * 100}%`,
+  } as CSSProperties;
 
   return (
     <div className="view">
@@ -106,6 +112,46 @@ export function SettingsScreen() {
               </button>
             ))}
           </div>
+        </Panel>
+        <Panel className="settings-card settings-card-audio">
+          <div className="settings-heading">
+            <span className="settings-icon">
+              {settings.soundEnabled ? <Volume2 size={19} /> : <VolumeX size={19} />}
+            </span>
+            <div>
+              <strong>Audio</strong>
+              <small>Subtle feedback for typing and controls.</small>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="audio-toggle"
+            onClick={() => updateSettings({ soundEnabled: !settings.soundEnabled })}
+          >
+            <span>{settings.soundEnabled ? "Sound enabled" : "Sound disabled"}</span>
+            <span className={cn("switch", settings.soundEnabled && "is-on")}>
+              <span />
+            </span>
+          </button>
+          <label className="volume-control" data-disabled={!settings.soundEnabled}>
+            <span>
+              <small>Volume</small>
+              <strong>{Math.round(settings.soundVolume * 100)}%</strong>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={settings.soundVolume}
+              disabled={!settings.soundEnabled}
+              aria-label="Sound volume"
+              style={volumeStyle}
+              onChange={(event) => updateSettings({ soundVolume: Number(event.target.value) })}
+              onPointerUp={previewVolume}
+              onKeyUp={previewVolume}
+            />
+          </label>
         </Panel>
         <Panel className="settings-card settings-card-list">
           <button

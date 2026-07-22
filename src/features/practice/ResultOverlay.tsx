@@ -1,5 +1,5 @@
 import { ArrowRight, RotateCcw } from "lucide-react";
-import { type CSSProperties, useEffect, useRef } from "react";
+import { type CSSProperties, useEffect } from "react";
 import type { TestResult } from "../../app/app.types";
 import { AnimatedValue } from "../../components/ui/AnimatedValue";
 import { Button } from "../../components/ui/Button";
@@ -13,24 +13,50 @@ interface ResultOverlayProps {
 
 const detailDelay = (index: number) => ({ "--delay": `${150 + index * 45}ms` }) as CSSProperties;
 
-export function ResultOverlay({ result, onRestart, onHistory }: ResultOverlayProps) {
-  const restartButton = useRef<HTMLButtonElement>(null);
+function formatAccuracy(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
+export function ResultOverlay({ result, onRestart, onHistory }: ResultOverlayProps) {
   useEffect(() => {
-    restartButton.current?.focus();
-  }, []);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return;
+      }
+
+      if (event.key === "Tab" || event.key === "Enter" || event.key === "Escape") {
+        event.preventDefault();
+        onRestart();
+      }
+
+      if (event.key.toLowerCase() === "h") {
+        event.preventDefault();
+        onHistory();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onHistory, onRestart]);
 
   return (
-    <div className="result-overlay" role="dialog" aria-modal="true" aria-label="Test result">
+    <div className="result-overlay" role="dialog" aria-modal="true" aria-labelledby="result-title">
       <div className="result-card">
+        <div className="result-heading">
+          <span>session complete</span>
+          <strong id="result-title">Nice run.</strong>
+        </div>
         <div className="result-primary">
-          <div>
-            <span>wpm</span>
+          <div className="result-score">
             <AnimatedValue as="strong" value={result.wpm} />
+            <span>wpm</span>
           </div>
-          <div>
+          <div className="result-score">
+            <div className="result-accuracy-value">
+              <AnimatedValue as="strong" value={formatAccuracy(result.accuracy)} />
+              <span>%</span>
+            </div>
             <span>accuracy</span>
-            <AnimatedValue as="strong" value={`${result.accuracy}%`} />
           </div>
         </div>
         <div className="result-details">
@@ -51,15 +77,18 @@ export function ResultOverlay({ result, onRestart, onHistory }: ResultOverlayPro
             <strong>{formatDuration(result.durationMs)}</strong>
           </div>
         </div>
-        <div className="result-actions">
-          <Button ref={restartButton} onClick={onRestart}>
-            <RotateCcw size={16} />
-            restart
-          </Button>
-          <Button variant="ghost" onClick={onHistory}>
-            history
-            <ArrowRight size={16} />
-          </Button>
+        <div className="result-footer">
+          <span className="result-shortcuts">tab restart · h history</span>
+          <div className="result-actions">
+            <Button onClick={onRestart}>
+              <RotateCcw size={16} />
+              restart
+            </Button>
+            <Button variant="ghost" onClick={onHistory}>
+              history
+              <ArrowRight size={16} />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

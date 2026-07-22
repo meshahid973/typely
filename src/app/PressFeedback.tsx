@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { audioEngine } from "../audio/audioEngine";
 
 const releaseDuration = 460;
 
@@ -9,6 +10,11 @@ function getButton(target: EventTarget | null) {
 
   const button = target.closest("button");
   return button instanceof HTMLButtonElement && !button.disabled ? button : null;
+}
+
+function enteredButton(event: PointerEvent, button: HTMLButtonElement) {
+  const previous = event.relatedTarget;
+  return !(previous instanceof Node) || !button.contains(previous);
 }
 
 export function PressFeedback() {
@@ -58,6 +64,14 @@ export function PressFeedback() {
       timers.set(button, timer);
     };
 
+    const handlePointerOver = (event: PointerEvent) => {
+      const button = getButton(event.target);
+
+      if (button && enteredButton(event, button) && button.dataset.sound !== "none") {
+        audioEngine.play("hover");
+      }
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       if (event.button !== 0) {
         return;
@@ -67,6 +81,14 @@ export function PressFeedback() {
 
       if (button) {
         press(button);
+      }
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      const button = getButton(event.target);
+
+      if (button && button.dataset.sound !== "none") {
+        audioEngine.play("click");
       }
     };
 
@@ -88,17 +110,21 @@ export function PressFeedback() {
       }
     };
 
+    document.addEventListener("pointerover", handlePointerOver, { passive: true });
     document.addEventListener("pointerdown", handlePointerDown, { passive: true });
     document.addEventListener("pointerup", release, { passive: true });
     document.addEventListener("pointercancel", release, { passive: true });
+    document.addEventListener("click", handleClick);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", release);
 
     return () => {
+      document.removeEventListener("pointerover", handlePointerOver);
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("pointerup", release);
       document.removeEventListener("pointercancel", release);
+      document.removeEventListener("click", handleClick);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", release);

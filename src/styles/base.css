@@ -28,7 +28,8 @@ button {
 }
 
 button:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+input:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 76%, transparent);
   outline-offset: 2px;
 }
@@ -246,12 +247,15 @@ textarea:focus-visible {
 
 .animated-value {
   display: inline-grid;
-  overflow: hidden;
+  min-width: 1ch;
+  overflow: clip;
   font-variant-numeric: tabular-nums;
 }
 
 .animated-value-content {
+  display: block;
   grid-area: 1 / 1;
+  padding-right: 0.08em;
   animation: value-in var(--motion-medium) var(--ease-out-expo) both;
 }
 

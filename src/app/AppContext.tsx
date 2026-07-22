@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { audioEngine } from "../audio/audioEngine";
 import { useLocalStorage } from "../lib/useLocalStorage";
 import type { AppSettings, AppView, TestResult } from "./app.types";
 
@@ -27,6 +28,8 @@ const defaultSettings: AppSettings = {
   reducedMotion: false,
   liveStats: true,
   caretStyle: "bar",
+  soundEnabled: true,
+  soundVolume: 0.35,
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -45,6 +48,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     root.dataset.theme = settings.theme;
     root.dataset.accent = settings.accent;
     root.dataset.motion = settings.reducedMotion ? "reduced" : "full";
+    audioEngine.configure(settings.soundEnabled, settings.soundVolume);
   }, [settings]);
 
   const updateSettings = useCallback(
