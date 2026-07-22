@@ -1,6 +1,6 @@
 [package]
 name = "typely"
-version = "0.3.0"
+version = "0.3.2"
 description = "A focused desktop typing trainer"
 authors = ["meshahid973"]
 edition = "2021"

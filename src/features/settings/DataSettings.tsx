@@ -1,20 +1,36 @@
 import { Download, RotateCcw, Trash2, Upload } from "lucide-react";
-import { type ChangeEvent, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { useApp } from "../../app/AppProvider";
 import { GameButton } from "../../components/ui/GameButton";
 import { downloadAppDataBackup, parseAppDataBackup } from "../../storage/appData";
 
+const maximumBackupSize = 8 * 1024 * 1024;
+
 export function DataSettings() {
   const { results, clearResults, resetProfile, createBackup, restoreBackup } = useApp();
   const inputRef = useRef<HTMLInputElement>(null);
+  const resetTimer = useRef<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimer.current !== null) {
+        window.clearTimeout(resetTimer.current);
+      }
+    };
+  }, []);
 
   const importBackup = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
 
     if (!file) {
+      return;
+    }
+
+    if (file.size > maximumBackupSize) {
+      setMessage("That backup is too large to import safely.");
       return;
     }
 
@@ -31,8 +47,21 @@ export function DataSettings() {
   const resetProgress = () => {
     if (!confirmReset) {
       setConfirmReset(true);
-      window.setTimeout(() => setConfirmReset(false), 3000);
+
+      if (resetTimer.current !== null) {
+        window.clearTimeout(resetTimer.current);
+      }
+
+      resetTimer.current = window.setTimeout(() => {
+        setConfirmReset(false);
+        resetTimer.current = null;
+      }, 3000);
       return;
+    }
+
+    if (resetTimer.current !== null) {
+      window.clearTimeout(resetTimer.current);
+      resetTimer.current = null;
     }
 
     clearResults();

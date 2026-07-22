@@ -31,7 +31,7 @@
 .result-grade small {
   margin-top: 13px;
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 760;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -53,7 +53,7 @@
 
 .result-stage-heading > span {
   color: var(--accent-strong);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 760;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -95,7 +95,7 @@
 
 .result-main-stat > span {
   color: var(--foreground-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 680;
 }
 
@@ -130,7 +130,7 @@
 .result-stage-details > div,
 .result-extra > div {
   display: flex;
-  min-height: 64px;
+  min-height: 70px;
   flex-direction: column;
   justify-content: space-between;
   padding: 11px 13px;
@@ -142,7 +142,7 @@
 .result-rewards span,
 .result-timeline-heading span {
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 680;
   text-transform: lowercase;
 }
@@ -167,7 +167,7 @@
 
 .result-timeline-heading strong {
   color: var(--foreground-muted);
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -222,7 +222,7 @@
   border-left: 3px solid var(--accent);
   background: var(--surface);
   color: var(--accent-strong);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 780;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -391,7 +391,7 @@
 
 .result-replay-panel > header span {
   color: var(--accent-strong);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 760;
   letter-spacing: 0.08em;
   text-transform: uppercase;

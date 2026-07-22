@@ -16,7 +16,7 @@ const navigation: NavigationItem[] = [
 ];
 
 export function AppNavigation() {
-  const { view, setView, settingsOpen, profileOpen, openSettings } = useApp();
+  const { view, setView, settingsOpen, profileOpen, openSettings, closeSettings } = useApp();
 
   return (
     <nav className="app-navigation" aria-label="Main navigation">
@@ -43,7 +43,7 @@ export function AppNavigation() {
         title="Settings"
         aria-haspopup="dialog"
         aria-expanded={settingsOpen}
-        onClick={openSettings}
+        onClick={settingsOpen ? closeSettings : openSettings}
       >
         <Settings size={15} strokeWidth={2} />
         <span>Settings</span>

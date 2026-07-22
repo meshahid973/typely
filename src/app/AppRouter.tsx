@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { HistoryScreen } from "../features/history/HistoryScreen";
 import { InsightsScreen } from "../features/insights/InsightsScreen";
 import { PracticeScreen } from "../features/practice/PracticeScreen";
-import { shouldReduceMotion } from "../utils/motion";
 import { useApp } from "./AppProvider";
 import type { AppView } from "./app.types";
 
@@ -28,14 +27,45 @@ function renderView(view: AppView) {
 }
 
 export function AppRouter() {
-  const { view, settings } = useApp();
+  const { view, settings, settingsOpen, profileOpen } = useApp();
   const [displayedView, setDisplayedView] = useState(view);
   const [phase, setPhase] = useState<TransitionPhase>("entering");
   const [direction, setDirection] = useState<TransitionDirection>("forward");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const transitionTimer = useRef<number | null>(null);
+  const enterFrame = useRef<number | null>(null);
+  const scrollResetKey = `${displayedView}:${phase}:${settingsOpen}:${profileOpen}`;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setPhase("idle"));
     return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+
+    if (!container || scrollResetKey.length === 0) {
+      return;
+    }
+
+    container.scrollLeft = 0;
+  }, [scrollResetKey]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const keepHorizontalPosition = () => {
+      if (container.scrollLeft !== 0) {
+        container.scrollLeft = 0;
+      }
+    };
+
+    container.addEventListener("scroll", keepHorizontalPosition, { passive: true });
+    return () => container.removeEventListener("scroll", keepHorizontalPosition);
   }, []);
 
   useEffect(() => {
@@ -43,7 +73,15 @@ export function AppRouter() {
       return;
     }
 
-    if (settings.reducedMotion || shouldReduceMotion()) {
+    if (transitionTimer.current !== null) {
+      window.clearTimeout(transitionTimer.current);
+    }
+
+    if (enterFrame.current !== null) {
+      window.cancelAnimationFrame(enterFrame.current);
+    }
+
+    if (settings.reducedMotion) {
       setDisplayedView(view);
       setPhase("idle");
       return;
@@ -52,23 +90,44 @@ export function AppRouter() {
     setDirection(viewOrder[view] >= viewOrder[displayedView] ? "forward" : "backward");
     setPhase("leaving");
 
-    const timeout = window.setTimeout(() => {
+    transitionTimer.current = window.setTimeout(() => {
       setDisplayedView(view);
       setPhase("entering");
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => setPhase("idle"));
+      enterFrame.current = window.requestAnimationFrame(() => {
+        enterFrame.current = window.requestAnimationFrame(() => {
+          setPhase("idle");
+          enterFrame.current = null;
+        });
       });
-    }, 150);
+      transitionTimer.current = null;
+    }, 160);
 
-    return () => window.clearTimeout(timeout);
+    return () => {
+      if (transitionTimer.current !== null) {
+        window.clearTimeout(transitionTimer.current);
+        transitionTimer.current = null;
+      }
+    };
   }, [displayedView, settings.reducedMotion, view]);
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimer.current !== null) {
+        window.clearTimeout(transitionTimer.current);
+      }
+
+      if (enterFrame.current !== null) {
+        window.cancelAnimationFrame(enterFrame.current);
+      }
+    };
+  }, []);
 
   return (
     <div
+      ref={containerRef}
       className="screen-transition"
       data-direction={direction}
       data-phase={phase}
-      key={displayedView}
     >
       {renderView(displayedView)}
     </div>

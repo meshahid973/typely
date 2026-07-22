@@ -3,7 +3,7 @@ import { useApp } from "../../app/AppProvider";
 import { calculatePlayerLevel } from "../../features/progression/progression";
 
 export function ProfileChip() {
-  const { profile, profileOpen, openProfile } = useApp();
+  const { profile, profileOpen, openProfile, closeProfile } = useApp();
   const playerLevel = useMemo(() => calculatePlayerLevel(profile.totalXp), [profile.totalXp]);
   const initial = profile.name.trim().charAt(0).toUpperCase() || "P";
 
@@ -12,10 +12,10 @@ export function ProfileChip() {
       type="button"
       className="profile-chip"
       data-avatar={profile.avatarStyle}
-      aria-label={`Open ${profile.name}'s profile`}
+      aria-label={`${profileOpen ? "Close" : "Open"} ${profile.name}'s profile`}
       aria-haspopup="dialog"
       aria-expanded={profileOpen}
-      onClick={openProfile}
+      onClick={profileOpen ? closeProfile : openProfile}
     >
       <span className="profile-chip-avatar" aria-hidden="true">
         {initial}

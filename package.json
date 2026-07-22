@@ -1,7 +1,7 @@
 {
   "name": "typely",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.2",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
@@ -15,7 +15,8 @@
     "lint": "biome check .",
     "check": "biome check . && tsc --noEmit && vitest run",
     "verify": "pnpm check && pnpm build",
-    "format": "biome check --write ."
+    "format": "biome check --write .",
+    "release:check": "pnpm check && pnpm build"
   },
   "dependencies": {
     "@tauri-apps/api": "2.11.1",

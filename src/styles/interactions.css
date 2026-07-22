@@ -72,7 +72,7 @@ button:disabled {
   padding: 0;
   border-radius: var(--radius-control);
   background: transparent;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
   transition:
@@ -195,7 +195,7 @@ button:disabled {
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--foreground-muted);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 680;
   transition:
     width var(--motion-standard) var(--ease-out),
@@ -267,7 +267,7 @@ button:disabled {
   border-radius: 6px;
   background: transparent;
   color: var(--foreground-muted);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 680;
   transition:
     color var(--motion-fast) var(--ease-out),
@@ -301,7 +301,7 @@ button:disabled {
 .toggle-row {
   position: relative;
   display: flex;
-  min-height: 52px;
+  min-height: 58px;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
@@ -323,14 +323,14 @@ button:disabled {
 
 .toggle-copy strong,
 .slider-heading strong {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 680;
 }
 
 .toggle-copy small {
   color: var(--foreground-muted);
-  font-size: 10px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .toggle-input {
@@ -401,7 +401,7 @@ button:disabled {
 
 .slider-heading span {
   color: var(--foreground-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -415,7 +415,7 @@ button:disabled {
   align-items: center;
   gap: 6px;
   color: var(--foreground-faint);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .key-hint kbd {

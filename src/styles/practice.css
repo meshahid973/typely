@@ -1,6 +1,8 @@
 .view-practice {
   width: 100%;
+  max-width: 100%;
   height: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -10,8 +12,10 @@
   --cadence-consistency: 1;
   position: relative;
   display: grid;
-  width: min(1200px, calc(100% - 64px));
+  width: calc(100% - 64px);
+  max-width: 1200px;
   height: 100%;
+  min-width: 0;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(22px, 4.2vh, 44px);
   margin: 0 auto;
@@ -90,7 +94,7 @@
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-foreground);
-  font-size: 9px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -100,7 +104,9 @@
 
 .practice-session {
   display: flex;
-  width: min(1000px, 100%);
+  width: 100%;
+  max-width: 1000px;
+  min-width: 0;
   min-height: 0;
   align-self: center;
   justify-self: center;
@@ -176,7 +182,7 @@
 .live-hud-secondary > span,
 .combo-counter > span {
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 680;
   letter-spacing: 0.04em;
   text-transform: lowercase;
@@ -218,7 +224,7 @@
   top: calc(100% + 8px);
   right: 0;
   color: var(--accent-strong);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 760;
   pointer-events: none;
   animation: combo-feedback-in 640ms var(--ease-out) both;
@@ -252,6 +258,7 @@
   width: 100%;
   height: 100%;
   resize: none;
+  overflow: hidden;
   border: 0;
   outline: 0;
   background: transparent;
@@ -259,12 +266,17 @@
   caret-color: transparent;
   opacity: 0;
   cursor: text;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .typing-copy {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
   padding: 4px 0 10px;
   color: var(--foreground-faint);
   font-family: var(--font-mono);
@@ -273,6 +285,7 @@
   letter-spacing: -0.045em;
   line-height: 1.43;
   overscroll-behavior: none;
+  scrollbar-width: none;
   transition:
     color var(--motion-standard) var(--ease-out),
     opacity var(--motion-standard) var(--ease-out);
@@ -280,6 +293,7 @@
 
 .typing-word {
   display: inline-block;
+  max-width: 100%;
   white-space: pre;
 }
 
@@ -375,7 +389,7 @@
   z-index: 3;
   color: var(--accent-strong);
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -405,7 +419,7 @@
   border-radius: 6px;
   background: var(--surface);
   color: var(--foreground-muted);
-  font-size: 10px;
+  font-size: 11px;
   transform: translateX(-50%);
   animation: message-in var(--motion-standard) var(--ease-out) both;
 }

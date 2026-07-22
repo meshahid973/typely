@@ -68,7 +68,13 @@ export function TypingSurface({
   });
 
   useEffect(() => {
-    inputElement.current?.focus();
+    const frame = window.requestAnimationFrame(() => {
+      const element = inputElement.current;
+      element?.focus({ preventScroll: true });
+      element?.setSelectionRange(element.value.length, element.value.length);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -82,7 +88,7 @@ export function TypingSurface({
     if (event.key === "Tab") {
       event.preventDefault();
       onReset();
-      window.setTimeout(() => inputElement.current?.focus(), 0);
+      window.setTimeout(() => inputElement.current?.focus({ preventScroll: true }), 0);
       return;
     }
 
@@ -110,14 +116,20 @@ export function TypingSurface({
   const keepSelectionAtEnd = () => {
     const element = inputElement.current;
 
-    if (
-      !element ||
-      (element.selectionStart === input.length && element.selectionEnd === input.length)
-    ) {
+    if (!element) {
       return;
     }
 
-    element.setSelectionRange(input.length, input.length);
+    if (element.selectionStart !== input.length || element.selectionEnd !== input.length) {
+      element.setSelectionRange(input.length, input.length);
+    }
+
+    element.scrollLeft = 0;
+  };
+
+  const focusInput = () => {
+    inputElement.current?.focus({ preventScroll: true });
+    keepSelectionAtEnd();
   };
 
   const reduceMotion = settings.reducedMotion || shouldReduceMotion();
@@ -150,8 +162,16 @@ export function TypingSurface({
         disabled={status === "complete"}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        wrap="soft"
         onSelect={keepSelectionAtEnd}
-        onFocus={() => setFocused(true)}
+        onMouseDown={(event) => {
+          event.preventDefault();
+          focusInput();
+        }}
+        onFocus={() => {
+          setFocused(true);
+          window.requestAnimationFrame(keepSelectionAtEnd);
+        }}
         onBlur={() => setFocused(false)}
         onPaste={(event: ClipboardEvent<HTMLTextAreaElement>) => event.preventDefault()}
         onDrop={(event: DragEvent<HTMLTextAreaElement>) => event.preventDefault()}

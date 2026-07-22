@@ -130,6 +130,10 @@ export function useTypingCaret({
       return;
     }
 
+    if (copy.scrollLeft !== 0) {
+      copy.scrollLeft = 0;
+    }
+
     const active = copy.querySelector<HTMLSpanElement>(`[data-typing-index="${activeIndex}"]`);
 
     if (!active) {
@@ -191,6 +195,7 @@ export function useTypingCaret({
     if (activeIndex === 0 && copy) {
       stopScroll();
       copy.scrollTop = 0;
+      copy.scrollLeft = 0;
       lastLineTop.current = -1;
       lastActiveIndex.current = 0;
       lastForwardScrollTarget.current = 0;

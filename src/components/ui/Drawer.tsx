@@ -1,7 +1,11 @@
 import { X } from "lucide-react";
 import type { PropsWithChildren } from "react";
 import { useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
+import { cn } from "../../utils/cn";
 import { IconButton } from "./IconButton";
+
+export type DrawerSize = "compact" | "standard" | "wide";
 
 interface DrawerProps {
   open: boolean;
@@ -9,6 +13,8 @@ interface DrawerProps {
   description?: string;
   onClose: () => void;
   closeLabel?: string;
+  size?: DrawerSize;
+  className?: string;
 }
 
 const focusableSelector = [
@@ -26,10 +32,14 @@ export function Drawer({
   description,
   onClose,
   closeLabel = `Close ${title.toLowerCase()}`,
+  size = "standard",
+  className,
   children,
 }: PropsWithChildren<DrawerProps>) {
   const drawerRef = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+  const restoreFrame = useRef<number | null>(null);
   const drawerId = useId();
   const titleId = `${drawerId}-title`;
   const descriptionId = `${drawerId}-description`;
@@ -39,8 +49,18 @@ export function Drawer({
       return;
     }
 
-    const previouslyFocused = document.activeElement;
-    const frame = window.requestAnimationFrame(() => closeButton.current?.focus());
+    if (restoreFrame.current !== null) {
+      window.cancelAnimationFrame(restoreFrame.current);
+      restoreFrame.current = null;
+    }
+
+    previousFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButton.current?.focus({ preventScroll: true });
+    });
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -64,26 +84,43 @@ export function Drawer({
 
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
-        last.focus();
+        last.focus({ preventScroll: true });
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
-        first.focus();
+        first.focus({ preventScroll: true });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(focusFrame);
       window.removeEventListener("keydown", handleKeyDown);
-      if (previouslyFocused instanceof HTMLElement) {
-        previouslyFocused.focus();
-      }
+
+      const target = previousFocus.current;
+      restoreFrame.current = window.requestAnimationFrame(() => {
+        target?.focus({ preventScroll: true });
+        restoreFrame.current = null;
+      });
     };
   }, [onClose, open]);
 
-  return (
-    <div className="drawer-layer" data-open={open} aria-hidden={!open} inert={!open}>
+  useEffect(() => {
+    return () => {
+      if (restoreFrame.current !== null) {
+        window.cancelAnimationFrame(restoreFrame.current);
+      }
+    };
+  }, []);
+
+  const layer = (
+    <div
+      className="drawer-layer"
+      data-open={open}
+      data-size={size}
+      aria-hidden={!open}
+      inert={!open}
+    >
       <button
         type="button"
         className="drawer-scrim"
@@ -94,7 +131,8 @@ export function Drawer({
       />
       <aside
         ref={drawerRef}
-        className="drawer"
+        className={cn("drawer", className)}
+        data-size={size}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -106,11 +144,13 @@ export function Drawer({
             {description && <p id={descriptionId}>{description}</p>}
           </div>
           <IconButton ref={closeButton} label={closeLabel} onClick={onClose}>
-            <X size={17} />
+            <X size={18} />
           </IconButton>
         </header>
         <div className="drawer-content">{children}</div>
       </aside>
     </div>
   );
+
+  return createPortal(layer, document.body);
 }

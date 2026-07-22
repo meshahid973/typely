@@ -41,6 +41,7 @@ export function ProfileDrawer() {
       title="Local profile"
       description="Progress stays on this device and works without an account."
       closeLabel="Close profile"
+      size="compact"
       onClose={closeProfile}
     >
       <section className="profile-hero" data-avatar={profile.avatarStyle}>

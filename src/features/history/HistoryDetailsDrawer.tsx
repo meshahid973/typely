@@ -36,6 +36,7 @@ export function HistoryDetailsDrawer({ result, onClose }: HistoryDetailsDrawerPr
       title="Result details"
       description={result ? formatDate(result.completedAt) : undefined}
       closeLabel="Close result details"
+      size="wide"
       onClose={onClose}
     >
       {result && (

@@ -19,20 +19,20 @@
   align-items: center;
   gap: 7px;
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 720;
   text-transform: uppercase;
 }
 
 .history-filters select {
   min-width: 112px;
-  height: 31px;
+  height: 36px;
   padding: 0 9px;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
   background: var(--background);
   color: var(--foreground);
-  font-size: 10px;
+  font-size: 12px;
   text-transform: none;
 }
 
@@ -51,7 +51,7 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 36px;
-  min-height: 78px;
+  min-height: 84px;
   border-bottom: 1px solid var(--border);
   opacity: 1;
   transform: translateX(0);
@@ -144,7 +144,7 @@
 .history-score-stat small,
 .history-score-date small {
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .history-score-stat strong,
@@ -192,7 +192,7 @@
   flex-direction: column;
   gap: 10px;
   color: var(--foreground-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .history-detail-hero {
@@ -226,7 +226,7 @@
 .history-detail-hero > div:last-child > span,
 .history-detail-hero small {
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .history-detail-hero > div:last-child {
@@ -271,7 +271,7 @@
 
 .history-detail-stats span {
   color: var(--foreground-faint);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .history-detail-judgements,
@@ -299,7 +299,7 @@
 .history-detail-modifiers p {
   margin: 4px 0 0;
   color: var(--foreground-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .history-detail-judgements > div,
@@ -317,7 +317,7 @@
   border-radius: var(--radius-small);
   background: var(--surface);
   color: var(--foreground-muted);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .history-detail-judgements strong {
