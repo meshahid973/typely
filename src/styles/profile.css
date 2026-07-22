@@ -302,3 +302,51 @@
     display: none;
   }
 }
+
+.profile-chip-xp {
+  display: flex;
+  width: 0;
+  max-width: 0;
+  overflow: hidden;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transition:
+    width var(--motion-standard) var(--ease-out),
+    max-width var(--motion-standard) var(--ease-out),
+    opacity var(--motion-fast) var(--ease-out);
+}
+
+.profile-chip:hover .profile-chip-xp,
+.profile-chip:focus-visible .profile-chip-xp,
+.profile-chip[aria-expanded="true"] .profile-chip-xp {
+  width: 78px;
+  max-width: 78px;
+  opacity: 1;
+}
+
+.profile-chip-xp > span {
+  display: block;
+  width: 72px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.profile-chip-xp > span > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--profile-color);
+  transform: scaleX(var(--profile-progress));
+  transform-origin: left center;
+  transition: transform var(--motion-standard) var(--ease-out);
+}
+
+.profile-chip-xp small {
+  color: var(--foreground-faint);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

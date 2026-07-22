@@ -191,7 +191,7 @@ button:disabled {
   height: 32px;
   align-items: stretch;
   gap: 0;
-  padding: 0 9px 0 6px;
+  padding: 0 10px 0 7px;
   border-radius: var(--radius-control);
   background: transparent;
   color: var(--foreground-muted);
@@ -220,7 +220,7 @@ button:disabled {
 .navigation-button-content {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   transition: transform var(--motion-standard) var(--ease-spring);
 }
 
@@ -449,7 +449,7 @@ button:disabled {
   transform-origin: left center;
   transition:
     background-color var(--motion-standard) var(--ease-out),
-    transform 160ms linear;
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .toggle-row[data-compact="true"] {

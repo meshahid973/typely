@@ -40,6 +40,8 @@ describe("typing events", () => {
     const deleted = applyTypingEvents(entered.stats, events("hel", "he", 4));
 
     expect(deleted.stats.backspaces).toBe(1);
+    expect(deleted.stats.currentCorrectCharacters).toBe(2);
+    expect(deleted.stats.currentIncorrectCharacters).toBe(0);
     expect(deleted.stats.currentCombo).toBe(3);
     expect(deleted.stats.totalKeystrokes).toBe(3);
   });
@@ -48,6 +50,8 @@ describe("typing events", () => {
     const created = events("", "hex");
     const result = applyTypingEvents(emptyTypingSessionStats, created);
 
+    expect(result.stats.currentCorrectCharacters).toBe(2);
+    expect(result.stats.currentIncorrectCharacters).toBe(1);
     expect(result.stats.correctKeystrokes).toBe(2);
     expect(result.stats.incorrectKeystrokes).toBe(1);
     expect(result.stats.currentCombo).toBe(0);

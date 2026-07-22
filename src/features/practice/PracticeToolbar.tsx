@@ -9,6 +9,7 @@ interface PracticeToolbarProps {
   configuration: TestConfiguration;
   disabled: boolean;
   refreshing: boolean;
+  stagePhase: "idle" | "leaving" | "entering";
   onConfigurationChange: (configuration: TestConfiguration) => void;
   onRefresh: () => void;
 }
@@ -17,11 +18,12 @@ export const PracticeToolbar = memo(function PracticeToolbar({
   configuration,
   disabled,
   refreshing,
+  stagePhase,
   onConfigurationChange,
   onRefresh,
 }: PracticeToolbarProps) {
   return (
-    <fieldset className="practice-toolbar">
+    <fieldset className="practice-toolbar" data-stage-phase={stagePhase}>
       <legend className="visually-hidden">Test configuration</legend>
       <ModePicker
         configuration={configuration}

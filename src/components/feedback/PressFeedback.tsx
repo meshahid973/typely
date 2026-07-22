@@ -79,6 +79,7 @@ export function PressFeedback() {
         return;
       }
 
+      audioEngine.prepare();
       const button = getButton(event.target);
 
       if (button) {
@@ -95,6 +96,8 @@ export function PressFeedback() {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      audioEngine.prepare();
+
       if (event.repeat || (event.key !== "Enter" && event.key !== " ")) {
         return;
       }

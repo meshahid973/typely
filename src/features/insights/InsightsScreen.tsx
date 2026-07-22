@@ -1,5 +1,5 @@
 import { BarChart3, Clock3, Gauge, Keyboard, Target, Zap } from "lucide-react";
-import { useMemo } from "react";
+import { type CSSProperties, useMemo, useRef, useState } from "react";
 import { useApp } from "../../app/AppProvider";
 import { AnimatedValue } from "../../components/ui/AnimatedValue";
 import { GameButton } from "../../components/ui/GameButton";
@@ -11,15 +11,21 @@ import {
   createTrendValues,
 } from "./insightCalculations";
 import { TrendChart } from "./TrendChart";
+import { useListLayoutAnimation } from "./useListLayoutAnimation";
 
 export function InsightsScreen() {
-  const { results, setView } = useApp();
+  const { results, settings, setView } = useApp();
+  const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null);
+  const modeListRef = useRef<HTMLDivElement>(null);
   const summary = useMemo(() => createInsightSummary(results), [results]);
   const letters = useMemo(() => createLetterInsights(results), [results]);
   const modes = useMemo(() => createModeInsights(results), [results]);
   const wpmTrend = useMemo(() => createTrendValues(results, "wpm"), [results]);
   const accuracyTrend = useMemo(() => createTrendValues(results, "accuracy"), [results]);
   const consistencyTrend = useMemo(() => createTrendValues(results, "consistency"), [results]);
+  const modeLayoutKey = modes.map((mode) => mode.id).join("|");
+
+  useListLayoutAnimation(modeListRef, modeLayoutKey, settings.reducedMotion);
 
   return (
     <div className="view general-view insights-view">
@@ -94,10 +100,27 @@ export function InsightsScreen() {
               </div>
               {results.length < 3 && <span>More tests will make these trends clearer.</span>}
             </header>
-            <div className="trend-grid">
-              <TrendChart values={wpmTrend} label="WPM" />
-              <TrendChart values={accuracyTrend} label="Accuracy" suffix="%" />
-              <TrendChart values={consistencyTrend} label="Consistency" suffix="%" />
+            <div className="trend-grid" data-hovering={hoveredTrendIndex !== null}>
+              <TrendChart
+                values={wpmTrend}
+                label="WPM"
+                hoveredIndex={hoveredTrendIndex}
+                onHoverIndex={setHoveredTrendIndex}
+              />
+              <TrendChart
+                values={accuracyTrend}
+                label="Accuracy"
+                suffix="%"
+                hoveredIndex={hoveredTrendIndex}
+                onHoverIndex={setHoveredTrendIndex}
+              />
+              <TrendChart
+                values={consistencyTrend}
+                label="Consistency"
+                suffix="%"
+                hoveredIndex={hoveredTrendIndex}
+                onHoverIndex={setHoveredTrendIndex}
+              />
             </div>
           </section>
 
@@ -118,15 +141,27 @@ export function InsightsScreen() {
                   <p className="insight-placeholder">Not enough repeated mistakes yet.</p>
                 ) : (
                   <div className="letter-list">
-                    {letters.weak.map((letter) => (
-                      <div key={letter.character}>
-                        <strong>{letter.character}</strong>
-                        <span>{letter.accuracy}% accuracy</span>
-                        <small>
-                          {letter.mistakes}/{letter.attempts} mistakes
-                        </small>
-                      </div>
-                    ))}
+                    {letters.weak.map((letter, index) => {
+                      const style = {
+                        "--letter-accuracy": letter.accuracy / 100,
+                        "--skill-delay": `${index * 45}ms`,
+                      } as CSSProperties;
+
+                      return (
+                        <div key={letter.character} style={style}>
+                          <strong>{letter.character}</strong>
+                          <span>
+                            <span>{letter.accuracy}% accuracy</span>
+                            <span className="letter-accuracy-bar" aria-hidden="true">
+                              <span />
+                            </span>
+                          </span>
+                          <small>
+                            {letter.mistakes}/{letter.attempts} mistakes
+                          </small>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </article>
@@ -140,13 +175,25 @@ export function InsightsScreen() {
                   <p className="insight-placeholder">Complete more tests to compare letters.</p>
                 ) : (
                   <div className="letter-list is-strong">
-                    {letters.strong.map((letter) => (
-                      <div key={letter.character}>
-                        <strong>{letter.character}</strong>
-                        <span>{letter.accuracy}% accuracy</span>
-                        <small>{letter.attempts} attempts</small>
-                      </div>
-                    ))}
+                    {letters.strong.map((letter, index) => {
+                      const style = {
+                        "--letter-accuracy": letter.accuracy / 100,
+                        "--skill-delay": `${index * 45}ms`,
+                      } as CSSProperties;
+
+                      return (
+                        <div key={letter.character} style={style}>
+                          <strong>{letter.character}</strong>
+                          <span>
+                            <span>{letter.accuracy}% accuracy</span>
+                            <span className="letter-accuracy-bar" aria-hidden="true">
+                              <span />
+                            </span>
+                          </span>
+                          <small>{letter.attempts} attempts</small>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </article>
@@ -156,9 +203,13 @@ export function InsightsScreen() {
                   <span>best modes</span>
                   <small>most practiced first</small>
                 </header>
-                <div className="mode-insight-list">
-                  {modes.map((mode) => (
-                    <div key={mode.id}>
+                <div ref={modeListRef} className="mode-insight-list">
+                  {modes.map((mode, index) => (
+                    <div
+                      key={mode.id}
+                      data-layout-item={mode.id}
+                      style={{ "--mode-delay": `${index * 45}ms` } as CSSProperties}
+                    >
                       <span>
                         <strong>{mode.label}</strong>
                         <small>

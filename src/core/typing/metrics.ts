@@ -19,18 +19,24 @@ export function calculateMetrics(
   events: TypingEvent[],
   stats?: TypingSessionStats,
   live = false,
+  consistencyOverride?: number,
 ): TestMetrics {
-  let correctCharacters = 0;
-
-  for (let index = 0; index < input.length; index += 1) {
-    if (input[index] === target[index]) {
-      correctCharacters += 1;
-    }
-  }
-
   const recorded = stats ?? summarizeTypingEvents(events);
   const totalCharacters = input.length;
-  const incorrectCharacters = Math.max(0, totalCharacters - correctCharacters);
+  let correctCharacters = recorded.currentCorrectCharacters;
+  let incorrectCharacters = recorded.currentIncorrectCharacters;
+
+  if (!stats) {
+    correctCharacters = 0;
+
+    for (let index = 0; index < input.length; index += 1) {
+      if (input[index] === target[index]) {
+        correctCharacters += 1;
+      }
+    }
+
+    incorrectCharacters = Math.max(0, totalCharacters - correctCharacters);
+  }
   const minutes = elapsedMs / 60000;
   const stableLiveReading = elapsedMs >= 500 && recorded.totalKeystrokes >= 2;
   const canCalculateSpeed = minutes > 0 && (!live || stableLiveReading);
@@ -45,7 +51,7 @@ export function calculateMetrics(
     wpm,
     rawWpm,
     accuracy,
-    consistency: calculateConsistency(events),
+    consistency: consistencyOverride ?? calculateConsistency(events),
     correctCharacters,
     incorrectCharacters,
     totalCharacters,

@@ -23,7 +23,6 @@ import {
   createTargetPositions,
   createTypingEvents,
   emptyTypingSessionStats,
-  getCorrectedIndices,
   getTypingImpact,
 } from "../../core/typing/typingEvents";
 import { collectNewJudgements, finalizeLastWordJudgement } from "../../core/typing/wordJudgements";
@@ -49,7 +48,7 @@ export function useTypingTest({
   const [status, setStatus] = useState<TestStatus>("ready");
   const [elapsedMs, setElapsedMs] = useState(0);
   const [stats, setStats] = useState<TypingSessionStats>(emptyTypingSessionStats);
-  const [events, setEvents] = useState<TypingEvent[]>([]);
+  const [correctedIndices, setCorrectedIndices] = useState<ReadonlySet<number>>(new Set());
   const [cadence, setCadence] = useState<CadenceMetrics>(emptyCadence);
   const [feedback, setFeedback] = useState<TypingFeedback>(emptyFeedback);
   const [lastResult, setLastResult] = useState<TestResult | null>(null);
@@ -65,6 +64,8 @@ export function useTypingTest({
   const statusRef = useRef<TestStatus>("ready");
   const statsRef = useRef<TypingSessionStats>(emptyTypingSessionStats);
   const eventsRef = useRef<TypingEvent[]>([]);
+  const incorrectIndicesRef = useRef(new Set<number>());
+  const correctedIndicesRef = useRef(new Set<number>());
   const judgementsRef = useRef<WordJudgement[]>([]);
   const judgedWordsRef = useRef(new Set<number>());
   const samplesRef = useRef<PerformanceSample[]>([]);
@@ -94,7 +95,7 @@ export function useTypingTest({
       );
       const finalJudgements = lastJudgement
         ? [...judgementsRef.current, lastJudgement]
-        : judgementsRef.current;
+        : [...judgementsRef.current];
 
       if (lastJudgement) {
         judgedWordsRef.current.add(lastJudgement.wordIndex);
@@ -111,7 +112,7 @@ export function useTypingTest({
       const result = createTestResult({
         configuration,
         elapsedMs: finalElapsedMs,
-        events: eventsRef.current,
+        events: [...eventsRef.current],
         judgements: finalJudgements,
         metrics,
         previousBestWpm,
@@ -136,6 +137,8 @@ export function useTypingTest({
     statusRef.current = "ready";
     statsRef.current = { ...emptyTypingSessionStats };
     eventsRef.current = [restartEvent];
+    incorrectIndicesRef.current = new Set<number>();
+    correctedIndicesRef.current = new Set<number>();
     judgementsRef.current = [];
     judgedWordsRef.current = new Set<number>();
     samplesRef.current = [];
@@ -151,7 +154,7 @@ export function useTypingTest({
     setStatus("ready");
     setElapsedMs(0);
     setStats({ ...emptyTypingSessionStats });
-    setEvents([restartEvent]);
+    setCorrectedIndices(new Set());
     setCadence(emptyCadence);
     setFeedback(emptyFeedback);
     setLastResult(null);
@@ -188,7 +191,7 @@ export function useTypingTest({
       if (configuration.mode === "time" && currentElapsedMs >= timeLimitMs) {
         finishTest(inputRef.current, timeLimitMs);
       }
-    }, 80);
+    }, 100);
 
     return () => window.clearInterval(interval);
   }, [configuration.mode, configuration.value, finishTest, getElapsed, status]);
@@ -256,12 +259,12 @@ export function useTypingTest({
         timestamp: activeTimestamp,
         sequenceStart: eventSequenceRef.current,
       });
-      const allEvents = [...eventsRef.current, ...newEvents];
+      eventsRef.current.push(...newEvents);
       const eventResult = applyTypingEvents(statsRef.current, newEvents);
       const newJudgements = collectNewJudgements(
         judgedWordsRef.current,
         newEvents,
-        allEvents,
+        eventsRef.current,
         limitedValue,
         targetRef.current,
         activeTimestamp,
@@ -269,12 +272,33 @@ export function useTypingTest({
 
       eventSequenceRef.current += newEvents.length;
 
+      let correctedChanged = false;
+
+      for (const event of newEvents) {
+        if (event.type === "restart" || event.type === "backspace") {
+          continue;
+        }
+
+        if (!event.correct) {
+          incorrectIndicesRef.current.add(event.targetIndex);
+          continue;
+        }
+
+        if (
+          incorrectIndicesRef.current.has(event.targetIndex) &&
+          !correctedIndicesRef.current.has(event.targetIndex)
+        ) {
+          correctedIndicesRef.current.add(event.targetIndex);
+          correctedChanged = true;
+        }
+      }
+
       for (const judgement of newJudgements) {
         judgedWordsRef.current.add(judgement.wordIndex);
       }
 
-      const allJudgements = [...judgementsRef.current, ...newJudgements];
-      const nextCadence = calculateCadence(allEvents);
+      judgementsRef.current.push(...newJudgements);
+      const nextCadence = calculateCadence(eventsRef.current);
       const comboRecordTarget = Math.max(10, previousBestCombo + 1);
       const comboRecord =
         eventResult.stats.maxCombo >= comboRecordTarget &&
@@ -293,15 +317,16 @@ export function useTypingTest({
 
       feedbackSequenceRef.current = nextFeedback.sequence;
       inputRef.current = limitedValue;
-      eventsRef.current = allEvents;
       statsRef.current = eventResult.stats;
-      judgementsRef.current = allJudgements;
 
       setInput(limitedValue);
-      setEvents(allEvents);
       setStats(eventResult.stats);
       setCadence(nextCadence);
       setFeedback(nextFeedback);
+
+      if (correctedChanged) {
+        setCorrectedIndices(new Set(correctedIndicesRef.current));
+      }
 
       if (configuration.mode === "words" && limitedValue.length >= targetRef.current.length) {
         finishTest(limitedValue, getElapsed(now));
@@ -323,14 +348,22 @@ export function useTypingTest({
   );
 
   const metrics = useMemo(
-    () => calculateMetrics(input, target, elapsedMs, events, stats, status !== "complete"),
-    [elapsedMs, events, input, stats, status, target],
+    () =>
+      calculateMetrics(
+        input,
+        target,
+        elapsedMs,
+        eventsRef.current,
+        stats,
+        status !== "complete",
+        status === "complete" ? undefined : Math.round(cadence.consistency * 100),
+      ),
+    [cadence.consistency, elapsedMs, input, stats, status, target],
   );
   const progress = useMemo(
     () => calculateProgress(configuration, input.length, target.length, elapsedMs),
     [configuration, elapsedMs, input.length, target.length],
   );
-  const correctedIndices = useMemo(() => getCorrectedIndices(events), [events]);
 
   return {
     target,

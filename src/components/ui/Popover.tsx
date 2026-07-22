@@ -19,10 +19,32 @@ export function Popover({
   children,
 }: PropsWithChildren<PopoverProps>) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeTimeout = useRef<number | null>(null);
+  const [mounted, setMounted] = useState(open);
+  const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState<CSSProperties>({});
 
+  useEffect(() => {
+    if (closeTimeout.current !== null) {
+      window.clearTimeout(closeTimeout.current);
+      closeTimeout.current = null;
+    }
+
+    if (open) {
+      setMounted(true);
+      const frame = window.requestAnimationFrame(() => setVisible(true));
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    setVisible(false);
+    closeTimeout.current = window.setTimeout(() => {
+      setMounted(false);
+      closeTimeout.current = null;
+    }, 150);
+  }, [open]);
+
   useLayoutEffect(() => {
-    if (!open) {
+    if (!mounted) {
       return;
     }
 
@@ -51,13 +73,14 @@ export function Popover({
         left: `${left}px`,
         top: `${top}px`,
         maxHeight: `${Math.max(220, placeAbove ? anchorRect.top - 24 : availableBelow)}px`,
+        transformOrigin: placeAbove ? "bottom center" : "top center",
       });
     };
 
     updatePosition();
     window.addEventListener("resize", updatePosition);
     return () => window.removeEventListener("resize", updatePosition);
-  }, [anchorRef, open]);
+  }, [anchorRef, mounted]);
 
   useEffect(() => {
     if (!open) {
@@ -91,7 +114,16 @@ export function Popover({
     };
   }, [anchorRef, onClose, open]);
 
-  if (!open) {
+  useEffect(
+    () => () => {
+      if (closeTimeout.current !== null) {
+        window.clearTimeout(closeTimeout.current);
+      }
+    },
+    [],
+  );
+
+  if (!mounted) {
     return null;
   }
 
@@ -99,6 +131,7 @@ export function Popover({
     <div
       ref={panelRef}
       className={cn("popover", className)}
+      data-open={visible}
       role="dialog"
       aria-modal="false"
       aria-labelledby={labelledBy}

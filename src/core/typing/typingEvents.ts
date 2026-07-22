@@ -1,6 +1,8 @@
 import type { TargetPosition, TypingEvent, TypingFeedback, TypingSessionStats } from "./types";
 
 export const emptyTypingSessionStats: TypingSessionStats = {
+  currentCorrectCharacters: 0,
+  currentIncorrectCharacters: 0,
   correctKeystrokes: 0,
   incorrectKeystrokes: 0,
   totalKeystrokes: 0,
@@ -135,12 +137,20 @@ export function applyTypingEvents(current: TypingSessionStats, events: TypingEve
 
     if (event.type === "backspace") {
       next.backspaces += 1;
+
+      if (event.correct) {
+        next.currentCorrectCharacters = Math.max(0, next.currentCorrectCharacters - 1);
+      } else {
+        next.currentIncorrectCharacters = Math.max(0, next.currentIncorrectCharacters - 1);
+      }
+
       continue;
     }
 
     next.totalKeystrokes += 1;
 
     if (event.correct) {
+      next.currentCorrectCharacters += 1;
       next.correctKeystrokes += 1;
       next.currentCombo += 1;
       next.maxCombo = Math.max(next.maxCombo, next.currentCombo);
@@ -154,6 +164,7 @@ export function applyTypingEvents(current: TypingSessionStats, events: TypingEve
         comboMilestone = next.currentCombo;
       }
     } else {
+      next.currentIncorrectCharacters += 1;
       next.incorrectKeystrokes += 1;
 
       if (next.currentCombo >= 10) {

@@ -354,9 +354,27 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-panel);
   background: var(--surface-raised);
-  animation: popover-in var(--motion-standard) var(--ease-out) both;
+  opacity: 0;
+  translate: 0 -9px;
+  scale: 0.975;
+  transition:
+    opacity var(--motion-fast) var(--ease-out),
+    translate var(--motion-standard) var(--ease-out),
+    scale var(--motion-standard) var(--ease-spring);
   scrollbar-color: var(--surface-selected) transparent;
   scrollbar-width: thin;
+}
+
+.popover[data-open="true"] {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.popover[data-open="false"] {
+  pointer-events: none;
+  transition-duration: 130ms;
+  transition-timing-function: var(--ease-exit);
 }
 
 .popover-heading {
@@ -390,6 +408,20 @@
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--border);
+  transition:
+    background-color var(--motion-standard) var(--ease-out),
+    transform var(--motion-standard) var(--ease-spring);
+  animation: modifier-row-in 360ms var(--ease-out) var(--modifier-delay) both;
+}
+
+.modifier-row[data-enabled="true"] {
+  background: var(--accent-soft);
+  transform: translateX(3px);
+}
+
+.modifier-row[data-enabled="true"] .modifier-icon {
+  color: var(--accent-strong);
+  transform: rotate(-3deg) scale(1.04);
 }
 
 .modifier-row:last-child {
@@ -404,6 +436,9 @@
   border-radius: var(--radius-small);
   background: var(--surface);
   color: var(--foreground-muted);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-standard) var(--ease-spring);
 }
 
 .modifier-multiplier {

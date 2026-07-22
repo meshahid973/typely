@@ -4,12 +4,31 @@ function clamp(value: number, minimum = 0, maximum = 1) {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
+function isEntryEvent(event: TypingEvent) {
+  return event.type === "character" || event.type === "space";
+}
+
 function entryEvents(events: TypingEvent[]) {
-  return events.filter((event) => event.type === "character" || event.type === "space");
+  return events.filter(isEntryEvent);
+}
+
+function recentEntryEvents(events: TypingEvent[], maximum = 12) {
+  const recent: TypingEvent[] = [];
+
+  for (let index = events.length - 1; index >= 0 && recent.length < maximum; index -= 1) {
+    const event = events[index];
+
+    if (isEntryEvent(event)) {
+      recent.push(event);
+    }
+  }
+
+  recent.reverse();
+  return recent;
 }
 
 export function calculateCadence(events: TypingEvent[]): CadenceMetrics {
-  const recent = entryEvents(events).slice(-12);
+  const recent = recentEntryEvents(events);
 
   if (recent.length < 2) {
     return {

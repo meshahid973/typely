@@ -81,6 +81,8 @@ describe("calculateMetrics", () => {
     const metrics = calculateMetrics("h", target, 60000, allEvents, stats);
 
     expect(metrics.totalKeystrokes).toBe(2);
+    expect(metrics.correctCharacters).toBe(1);
+    expect(metrics.incorrectCharacters).toBe(0);
     expect(stats.backspaces).toBe(1);
   });
 });

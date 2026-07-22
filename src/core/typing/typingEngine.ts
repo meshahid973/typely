@@ -13,7 +13,9 @@ function applyCapital(word: string) {
 
 export function createTarget(configuration: TestConfiguration) {
   const wordCount =
-    configuration.mode === "words" ? configuration.value : Math.max(180, configuration.value * 5);
+    configuration.mode === "words"
+      ? configuration.value
+      : Math.max(80, Math.ceil(configuration.value * 4.5));
   const words = Array.from({ length: wordCount }, (_, index) => {
     let word = randomItem(commonWords);
 

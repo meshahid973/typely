@@ -108,7 +108,7 @@ select:focus-visible {
 }
 
 .titlebar-brand:hover .titlebar-mark {
-  transform: translateY(-1px) rotate(-4deg) scale(1.04);
+  transform: translateY(-1px) rotate(-3deg) scale(1.04);
 }
 
 .titlebar-drag-region {
@@ -120,7 +120,7 @@ select:focus-visible {
 .app-navigation {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .titlebar-controls {
@@ -293,4 +293,26 @@ select:focus-visible {
   .titlebar-brand > span:last-child {
     display: none;
   }
+}
+
+:root[data-test-active="true"] .titlebar-brand,
+:root[data-test-active="true"] .profile-chip,
+:root[data-test-active="true"] .app-navigation,
+:root[data-test-active="true"] .titlebar-controls {
+  opacity: 0.42;
+  transition:
+    opacity var(--motion-standard) var(--ease-out),
+    background-color var(--motion-screen) var(--ease-out),
+    border-color var(--motion-standard) var(--ease-out);
+}
+
+:root[data-test-active="true"] .titlebar:hover .titlebar-brand,
+:root[data-test-active="true"] .titlebar:hover .profile-chip,
+:root[data-test-active="true"] .titlebar:hover .app-navigation,
+:root[data-test-active="true"] .titlebar:hover .titlebar-controls,
+:root[data-test-active="true"] .titlebar:focus-within .titlebar-brand,
+:root[data-test-active="true"] .titlebar:focus-within .profile-chip,
+:root[data-test-active="true"] .titlebar:focus-within .app-navigation,
+:root[data-test-active="true"] .titlebar:focus-within .titlebar-controls {
+  opacity: 1;
 }

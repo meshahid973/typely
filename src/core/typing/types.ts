@@ -33,6 +33,8 @@ export interface TypingEvent {
 }
 
 export interface TypingSessionStats {
+  currentCorrectCharacters: number;
+  currentIncorrectCharacters: number;
   correctKeystrokes: number;
   incorrectKeystrokes: number;
   totalKeystrokes: number;

@@ -3843,7 +3843,7 @@ checksum = "bc7d623258602320d5c55d1bc22793b57daff0ec7efc270ea7d55ce1d5f5471c"
 
 [[package]]
 name = "typely"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "tauri",
  "tauri-build",

@@ -7,7 +7,8 @@ import {
   type LucideIcon,
   SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { AnimatedValue } from "../../components/ui/AnimatedValue";
 import { GameButton } from "../../components/ui/GameButton";
 import { Popover } from "../../components/ui/Popover";
 import { Toggle } from "../../components/ui/Toggle";
@@ -32,18 +33,18 @@ interface ModifierOption {
 
 const modifierOptions: ModifierOption[] = [
   {
-    key: "punctuation",
-    label: "Punctuation",
-    description: "Adds punctuation marks.",
-    multiplier: "1.08×",
-    icon: AtSign,
-  },
-  {
     key: "numbers",
     label: "Numbers",
     description: "Mixes number groups into the text.",
     multiplier: "1.05×",
     icon: Hash,
+  },
+  {
+    key: "punctuation",
+    label: "Punctuation",
+    description: "Adds punctuation marks.",
+    multiplier: "1.08×",
+    icon: AtSign,
   },
   {
     key: "capitals",
@@ -113,17 +114,19 @@ export function ModifiersPopover({ configuration, disabled, onChange }: Modifier
       >
         <header className="popover-heading modifier-heading">
           <div>
-            <h2 id={headingId}>Modifiers</h2>
-            <p>Add difficulty without crowding the stage.</p>
+            <h2 id={headingId}>Mods</h2>
+            <p>Build a harder run without crowding the stage.</p>
           </div>
-          <strong>{multiplier.toFixed(2)}×</strong>
+          <AnimatedValue as="strong" value={`${multiplier.toFixed(2)}×`} duration={210} />
         </header>
         <div className="modifier-list">
-          {modifierOptions.map((option) => {
+          {modifierOptions.map((option, index) => {
             const Icon = option.icon;
+            const enabled = configuration[option.key];
+            const style = { "--modifier-delay": `${index * 38}ms` } as CSSProperties;
 
             return (
-              <div className="modifier-row" key={option.key}>
+              <div className="modifier-row" data-enabled={enabled} key={option.key} style={style}>
                 <span className="modifier-icon" aria-hidden="true">
                   <Icon size={15} />
                 </span>
@@ -131,8 +134,8 @@ export function ModifiersPopover({ configuration, disabled, onChange }: Modifier
                   id={`modifier-${option.key}`}
                   label={option.label}
                   description={option.description}
-                  checked={configuration[option.key]}
-                  onChange={(enabled) => changeModifier(option.key, enabled)}
+                  checked={enabled}
+                  onChange={(checked) => changeModifier(option.key, checked)}
                 />
                 <span className="modifier-multiplier">{option.multiplier}</span>
               </div>

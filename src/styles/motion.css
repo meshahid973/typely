@@ -268,12 +268,10 @@
 @keyframes trend-draw {
   from {
     opacity: 0;
-    stroke-dasharray: 160;
-    stroke-dashoffset: 160;
+    stroke-dashoffset: 1;
   }
   to {
     opacity: 1;
-    stroke-dasharray: 160;
     stroke-dashoffset: 0;
   }
 }
@@ -286,5 +284,105 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes stage-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(13px);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes combo-ribbon-break {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  32% {
+    opacity: 1;
+    transform: translateY(2px) scale(0.985);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(13px) scale(0.96);
+  }
+}
+
+@keyframes combo-strip-break {
+  0% {
+    transform: scaleY(1);
+  }
+  45% {
+    transform: scaleY(0.45);
+  }
+  100% {
+    transform: translateY(8px) scaleY(0);
+  }
+}
+
+@keyframes combo-strip-settle {
+  0% {
+    transform: scaleY(0.35);
+  }
+  60% {
+    transform: scaleY(1.15);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes modifier-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes skill-bar-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(var(--letter-accuracy));
+  }
+}
+
+@keyframes mode-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toolbar-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(-1px) scale(1.002);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

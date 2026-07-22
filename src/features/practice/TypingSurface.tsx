@@ -3,7 +3,9 @@ import {
   type ClipboardEvent,
   type DragEvent,
   type KeyboardEvent,
+  memo,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -17,10 +19,11 @@ import type {
   TypingFeedback,
 } from "../../core/typing/types";
 import { cn } from "../../utils/cn";
-import { shouldReduceMotion } from "../../utils/motion";
-import { createTypingWords, TypingCharacter } from "./TypingCharacter";
+import { TypingText } from "./TypingText";
+import { createTypingWords } from "./typingTextTypes";
 import { useTypingCaret } from "./useTypingCaret";
 import { useTypingFeedbackEffects } from "./useTypingFeedbackEffects";
+import { useTypingTextState } from "./useTypingTextState";
 
 interface TypingSurfaceProps {
   target: string;
@@ -30,11 +33,12 @@ interface TypingSurfaceProps {
   cadence: CadenceMetrics;
   feedback: TypingFeedback;
   correctedIndices: ReadonlySet<number>;
+  stagePhase: "idle" | "leaving" | "entering";
   onInput: (value: string) => TypingFeedback;
   onReset: () => void;
 }
 
-export function TypingSurface({
+export const TypingSurface = memo(function TypingSurface({
   target,
   input,
   status,
@@ -42,24 +46,36 @@ export function TypingSurface({
   cadence,
   feedback,
   correctedIndices,
+  stagePhase,
   onInput,
   onReset,
 }: TypingSurfaceProps) {
   const { settings } = useApp();
   const inputElement = useRef<HTMLTextAreaElement>(null);
-  const copyElement = useRef<HTMLDivElement>(null);
+  const viewportElement = useRef<HTMLDivElement>(null);
+  const trackElement = useRef<HTMLDivElement>(null);
   const caretElement = useRef<HTMLSpanElement>(null);
   const [focused, setFocused] = useState(false);
   const words = useMemo(() => createTypingWords(target), [target]);
   const activeIndex = input.length;
-  const caret = useTypingCaret({
-    copyElement,
+
+  useTypingCaret({
+    viewportElement,
+    trackElement,
     activeIndex,
     targetLength: target.length,
     caretStyle: settings.caretStyle,
-    reducedMotion: settings.reducedMotion,
     status,
   });
+
+  useTypingTextState({
+    trackElement,
+    input,
+    target,
+    correctedIndices,
+    complete: status === "complete",
+  });
+
   const { visibleJudgement, playFeedback } = useTypingFeedbackEffects({
     cadence,
     caretElement,
@@ -77,9 +93,32 @@ export function TypingSurface({
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
+  useLayoutEffect(() => {
+    const element = inputElement.current;
+
+    if (!element || element.value === input) {
+      return;
+    }
+
+    element.value = input;
+    element.setSelectionRange(input.length, input.length);
+  }, [input]);
+
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const nextValue = event.target.value.replace(/[\r\n]/g, "");
-    playFeedback(onInput(nextValue));
+
+    if (nextValue !== event.target.value) {
+      event.target.value = nextValue;
+    }
+
+    const nextFeedback = onInput(nextValue);
+
+    if (configuration.noBackspace && nextValue.length < input.length) {
+      event.target.value = input;
+      event.target.setSelectionRange(input.length, input.length);
+    }
+
+    playFeedback(nextFeedback);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -120,8 +159,10 @@ export function TypingSurface({
       return;
     }
 
-    if (element.selectionStart !== input.length || element.selectionEnd !== input.length) {
-      element.setSelectionRange(input.length, input.length);
+    const end = element.value.length;
+
+    if (element.selectionStart !== end || element.selectionEnd !== end) {
+      element.setSelectionRange(end, end);
     }
 
     element.scrollLeft = 0;
@@ -132,28 +173,32 @@ export function TypingSurface({
     keepSelectionAtEnd();
   };
 
-  const reduceMotion = settings.reducedMotion || shouldReduceMotion();
   const showJudgement =
     settings.judgementsEnabled &&
-    !reduceMotion &&
+    !settings.reducedMotion &&
     visibleJudgement !== null &&
     status !== "complete";
   const showTrail =
-    settings.cadenceEffects && !reduceMotion && cadence.speed > 0.94 && status === "running";
+    settings.cadenceEffects &&
+    !settings.reducedMotion &&
+    cadence.speed > 0.94 &&
+    status === "running";
 
   return (
     <section
       className={cn("typing-surface", focused && "is-focused")}
       data-caret={settings.caretStyle}
       data-status={status}
+      data-stage-phase={stagePhase}
       data-hidden-mod={configuration.hidden}
       data-impact={feedback.impact}
+      data-show-trail={showTrail}
       aria-label="Typing area"
     >
       <textarea
         ref={inputElement}
         className="typing-input"
-        value={input}
+        defaultValue=""
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"
@@ -176,52 +221,20 @@ export function TypingSurface({
         onPaste={(event: ClipboardEvent<HTMLTextAreaElement>) => event.preventDefault()}
         onDrop={(event: DragEvent<HTMLTextAreaElement>) => event.preventDefault()}
       />
-      <div ref={copyElement} className="typing-copy" aria-hidden="true">
-        {showTrail && (
-          <span
-            className={cn(
-              "typing-caret-trail",
-              caret.visible && "is-visible",
-              caret.lineJump && "is-line-jump",
-            )}
-            style={caret.style}
-          />
-        )}
-        <span
-          ref={caretElement}
-          className={cn(
-            "typing-caret",
-            caret.visible && "is-visible",
-            caret.lineJump && "is-line-jump",
-          )}
-          style={caret.style}
-        />
+      <div ref={viewportElement} className="typing-copy" data-line-jump="false" aria-hidden="true">
+        <div ref={trackElement} className="typing-track">
+          <TypingText words={words} />
+        </div>
+        <span className="typing-caret-trail" />
+        <span ref={caretElement} className="typing-caret" />
         {showJudgement && (
           <span
             key={visibleJudgement.id}
             className={cn("word-judgement", `is-${visibleJudgement.type}`)}
-            style={caret.judgementStyle}
           >
             {visibleJudgement.type}
           </span>
         )}
-        {words.map((word) => (
-          <span className="typing-word" key={word.id}>
-            {word.characters.map((unit) => {
-              const active = unit.index === activeIndex && status !== "complete";
-
-              return (
-                <TypingCharacter
-                  key={unit.id}
-                  unit={unit}
-                  typedCharacter={input[unit.index]}
-                  active={active}
-                  corrected={correctedIndices.has(unit.index)}
-                />
-              );
-            })}
-          </span>
-        ))}
       </div>
       {!focused && status !== "complete" && status !== "paused" && (
         <div className="typing-message">click to focus</div>
@@ -229,4 +242,4 @@ export function TypingSurface({
       {status === "paused" && <div className="typing-message">paused · type to continue</div>}
     </section>
   );
-}
+});

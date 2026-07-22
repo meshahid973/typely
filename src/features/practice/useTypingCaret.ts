@@ -1,247 +1,180 @@
-import {
-  type CSSProperties,
-  type RefObject,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { type RefObject, useCallback, useLayoutEffect, useRef } from "react";
 import type { CaretStyle } from "../../app/app.types";
 import type { TestStatus } from "../../core/typing/types";
 
-interface CaretPosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  visible: boolean;
-}
-
 interface UseTypingCaretOptions {
-  copyElement: RefObject<HTMLDivElement | null>;
+  viewportElement: RefObject<HTMLDivElement | null>;
+  trackElement: RefObject<HTMLDivElement | null>;
   activeIndex: number;
   targetLength: number;
   caretStyle: CaretStyle;
-  reducedMotion: boolean;
   status: TestStatus;
 }
-
-const hiddenCaret: CaretPosition = {
-  x: 0,
-  y: 0,
-  width: 3,
-  height: 0,
-  visible: false,
-};
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
-function easeOutQuint(value: number) {
-  return 1 - (1 - value) ** 5;
-}
-
 export function useTypingCaret({
-  copyElement,
+  viewportElement,
+  trackElement,
   activeIndex,
   targetLength,
   caretStyle,
-  reducedMotion,
   status,
 }: UseTypingCaretOptions) {
-  const scrollFrame = useRef<number | null>(null);
   const lineJumpFrame = useRef<number | null>(null);
+  const measureFrame = useRef<number | null>(null);
   const lastLineTop = useRef(-1);
   const lastActiveIndex = useRef(0);
-  const lastForwardScrollTarget = useRef(0);
+  const lastLaneOffset = useRef(0);
+  const lastTrackPadding = useRef(-1);
+  const lineHeightRef = useRef(0);
+  const characterHeightRef = useRef(0);
   const measureRef = useRef<() => void>(() => undefined);
-  const [caret, setCaret] = useState<CaretPosition>(hiddenCaret);
-  const [lineJump, setLineJump] = useState(false);
 
-  const stopScroll = useCallback(() => {
-    if (scrollFrame.current !== null) {
-      window.cancelAnimationFrame(scrollFrame.current);
-      scrollFrame.current = null;
-    }
-  }, []);
-
-  const scrollTo = useCallback(
-    (element: HTMLDivElement, targetTop: number) => {
-      stopScroll();
-      const clampedTarget = clamp(
-        targetTop,
-        0,
-        Math.max(0, element.scrollHeight - element.clientHeight),
-      );
-
-      if (reducedMotion) {
-        element.scrollTop = clampedTarget;
-        return;
-      }
-
-      const startTop = element.scrollTop;
-      const distance = clampedTarget - startTop;
-
-      if (Math.abs(distance) < 0.75) {
-        element.scrollTop = clampedTarget;
-        return;
-      }
-
-      const startedAt = performance.now();
-      const duration = 260;
-
-      const update = (now: number) => {
-        const progress = Math.min(1, (now - startedAt) / duration);
-        element.scrollTop = startTop + distance * easeOutQuint(progress);
-
-        if (progress < 1) {
-          scrollFrame.current = window.requestAnimationFrame(update);
-        } else {
-          element.scrollTop = clampedTarget;
-          scrollFrame.current = null;
-        }
-      };
-
-      scrollFrame.current = window.requestAnimationFrame(update);
-    },
-    [reducedMotion, stopScroll],
-  );
-
-  const markLineJump = useCallback(() => {
+  const markLineJump = useCallback((viewport: HTMLDivElement) => {
     if (lineJumpFrame.current !== null) {
       window.cancelAnimationFrame(lineJumpFrame.current);
     }
 
-    setLineJump(true);
+    viewport.dataset.lineJump = "true";
     lineJumpFrame.current = window.requestAnimationFrame(() => {
       lineJumpFrame.current = window.requestAnimationFrame(() => {
-        setLineJump(false);
+        viewport.dataset.lineJump = "false";
         lineJumpFrame.current = null;
       });
     });
   }, []);
 
-  const measureCaret = useCallback(() => {
-    const copy = copyElement.current;
+  const measure = useCallback(() => {
+    const viewport = viewportElement.current;
+    const track = trackElement.current;
 
-    if (!copy || status === "complete" || activeIndex > targetLength) {
-      setCaret((current) => ({ ...current, visible: false }));
+    if (!viewport || !track || status === "complete" || activeIndex > targetLength) {
+      if (viewport) {
+        viewport.dataset.caretVisible = "false";
+      }
       return;
     }
 
-    if (copy.scrollLeft !== 0) {
-      copy.scrollLeft = 0;
-    }
-
-    const active = copy.querySelector<HTMLSpanElement>(`[data-typing-index="${activeIndex}"]`);
+    const active = track.querySelector<HTMLSpanElement>(`[data-typing-index="${activeIndex}"]`);
 
     if (!active) {
       return;
     }
 
-    const characterHeight = active.offsetHeight;
-    const blockCaret = caretStyle === "block";
-    const caretHeight = blockCaret ? characterHeight : Math.max(18, characterHeight * 0.82);
-    const caretWidth = blockCaret ? Math.max(10, active.offsetWidth) : 3;
+    let characterHeight = characterHeightRef.current;
+    let lineHeight = lineHeightRef.current;
+
+    if (characterHeight === 0 || lineHeight === 0) {
+      characterHeight = active.offsetHeight;
+      lineHeight =
+        Number.parseFloat(window.getComputedStyle(active).lineHeight) || characterHeight * 1.43;
+      characterHeightRef.current = characterHeight;
+      lineHeightRef.current = lineHeight;
+    }
+
+    const trackPadding = Math.max(0, (viewport.clientHeight - lineHeight) / 2);
+
+    if (Math.abs(trackPadding - lastTrackPadding.current) > 0.5) {
+      lastTrackPadding.current = trackPadding;
+      track.style.setProperty("--typing-track-padding", `${trackPadding}px`);
+    }
+
     const activeTop = active.offsetTop;
     const movingForward = activeIndex >= lastActiveIndex.current;
     const changedLine =
-      lastLineTop.current >= 0 &&
-      Math.abs(activeTop - lastLineTop.current) > characterHeight * 0.55;
+      lastLineTop.current >= 0 && Math.abs(activeTop - lastLineTop.current) > lineHeight * 0.55;
+    const rawLaneOffset = Math.max(0, activeTop - trackPadding);
+    const maximumLaneOffset = Math.max(0, track.scrollHeight - viewport.clientHeight);
+    const nextLaneOffset = clamp(
+      movingForward ? Math.max(lastLaneOffset.current, rawLaneOffset) : rawLaneOffset,
+      0,
+      maximumLaneOffset,
+    );
+    const blockCaret = caretStyle === "block";
+    const caretHeight = blockCaret ? characterHeight : Math.max(18, characterHeight * 0.82);
+    const caretWidth = blockCaret ? Math.max(10, active.offsetWidth) : 3;
 
-    if (changedLine) {
-      markLineJump();
-    }
-
-    setCaret({
-      x: active.offsetLeft - (blockCaret ? 1 : 2),
-      y: activeTop + (characterHeight - caretHeight) / 2,
-      width: caretWidth,
-      height: caretHeight,
-      visible: true,
-    });
-
-    const activeBottom = activeTop + characterHeight;
-    const safeTop = copy.scrollTop + characterHeight * 0.35;
-    const safeBottom = copy.scrollTop + copy.clientHeight - characterHeight * 1.35;
-    const outsideViewport = activeTop < safeTop || activeBottom > safeBottom;
-
-    if (changedLine && outsideViewport) {
-      const desiredTop = activeTop - copy.clientHeight * 0.36;
-      const forwardTarget = movingForward
-        ? Math.max(copy.scrollTop, lastForwardScrollTarget.current, desiredTop)
-        : desiredTop;
-
-      if (movingForward) {
-        lastForwardScrollTarget.current = forwardTarget;
+    if (activeIndex === 0) {
+      lastLaneOffset.current = 0;
+      track.style.setProperty("--lane-offset", "0px");
+    } else if (Math.abs(nextLaneOffset - lastLaneOffset.current) > 0.5) {
+      if (changedLine) {
+        markLineJump(viewport);
       }
 
-      scrollTo(copy, forwardTarget);
+      lastLaneOffset.current = nextLaneOffset;
+      track.style.setProperty("--lane-offset", `${-nextLaneOffset}px`);
     }
 
-    if (!movingForward && activeTop < safeTop) {
-      scrollTo(copy, activeTop - characterHeight * 0.5);
-      lastForwardScrollTarget.current = copy.scrollTop;
-    }
+    viewport.style.setProperty("--caret-x", `${active.offsetLeft - (blockCaret ? 1 : 2)}px`);
+    viewport.style.setProperty(
+      "--caret-y",
+      `${trackPadding + (characterHeight - caretHeight) / 2}px`,
+    );
+    viewport.style.setProperty("--caret-width", `${caretWidth}px`);
+    viewport.style.setProperty("--caret-height", `${caretHeight}px`);
+    viewport.style.setProperty("--typing-line-height", `${lineHeight}px`);
+    viewport.dataset.caretVisible = "true";
 
     lastLineTop.current = activeTop;
     lastActiveIndex.current = activeIndex;
-  }, [activeIndex, caretStyle, copyElement, markLineJump, scrollTo, status, targetLength]);
+  }, [activeIndex, caretStyle, markLineJump, status, targetLength, trackElement, viewportElement]);
+
+  measureRef.current = measure;
 
   useLayoutEffect(() => {
-    const copy = copyElement.current;
-
-    if (activeIndex === 0 && copy) {
-      stopScroll();
-      copy.scrollTop = 0;
-      copy.scrollLeft = 0;
-      lastLineTop.current = -1;
-      lastActiveIndex.current = 0;
-      lastForwardScrollTarget.current = 0;
+    if (measureFrame.current !== null) {
+      window.cancelAnimationFrame(measureFrame.current);
     }
 
-    measureRef.current = measureCaret;
-    measureCaret();
-  }, [activeIndex, copyElement, measureCaret, stopScroll]);
+    measure();
+    measureFrame.current = window.requestAnimationFrame(() => {
+      measureRef.current();
+      measureFrame.current = null;
+    });
+  }, [measure]);
 
   useLayoutEffect(() => {
-    const copy = copyElement.current;
+    const viewport = viewportElement.current;
+    const track = trackElement.current;
 
-    if (!copy) {
+    if (!viewport || !track) {
       return;
     }
 
-    const observer = new ResizeObserver(() => measureRef.current());
-    observer.observe(copy);
+    const observer = new ResizeObserver(() => {
+      lineHeightRef.current = 0;
+      characterHeightRef.current = 0;
+      measureRef.current();
+    });
+    observer.observe(viewport);
+    observer.observe(track);
 
-    return () => observer.disconnect();
-  }, [copyElement]);
+    const handleFontsLoaded = () => {
+      lineHeightRef.current = 0;
+      characterHeightRef.current = 0;
+      measureRef.current();
+    };
+    document.fonts?.addEventListener("loadingdone", handleFontsLoaded);
+
+    return () => {
+      observer.disconnect();
+      document.fonts?.removeEventListener("loadingdone", handleFontsLoaded);
+    };
+  }, [trackElement, viewportElement]);
 
   useLayoutEffect(() => {
     return () => {
-      stopScroll();
-
       if (lineJumpFrame.current !== null) {
         window.cancelAnimationFrame(lineJumpFrame.current);
       }
+
+      if (measureFrame.current !== null) {
+        window.cancelAnimationFrame(measureFrame.current);
+      }
     };
-  }, [stopScroll]);
-
-  const style = {
-    width: `${caret.width}px`,
-    height: `${caret.height}px`,
-    transform: `translate3d(${caret.x}px, ${caret.y}px, 0)`,
-  } satisfies CSSProperties;
-
-  const judgementStyle = {
-    transform: `translate3d(${caret.x}px, ${Math.max(0, caret.y - 28)}px, 0)`,
-  } satisfies CSSProperties;
-
-  return {
-    visible: caret.visible,
-    lineJump,
-    style,
-    judgementStyle,
-  };
+  }, []);
 }

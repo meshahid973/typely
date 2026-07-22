@@ -37,6 +37,7 @@ class AudioEngine {
   private configuration = defaultConfiguration;
   private lastHoverAt = 0;
   private correctVariant = 0;
+  private toneCache = new Map<string, SoundTone[]>();
 
   configure(configuration: AudioConfiguration) {
     this.configuration = {
@@ -95,7 +96,16 @@ class AudioEngine {
     const variant = options.variant ?? (effect === "typing-correct" ? this.correctVariant++ : 0);
     const pitch = Math.max(0.94, Math.min(1.08, options.pitch ?? 1));
 
-    for (const tone of createSoundTones(this.configuration.pack, effect, variant)) {
+    const variantKey = effect === "typing-correct" ? variant % 3 : 0;
+    const cacheKey = `${this.configuration.pack}:${effect}:${variantKey}`;
+    let tones = this.toneCache.get(cacheKey);
+
+    if (!tones) {
+      tones = createSoundTones(this.configuration.pack, effect, variantKey);
+      this.toneCache.set(cacheKey, tones);
+    }
+
+    for (const tone of tones) {
       this.playTone(context, tone, effectChannel(effect), pitch);
     }
   }
