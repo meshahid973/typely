@@ -1,0 +1,59 @@
+:root {
+  color-scheme: light;
+  --background: #f4f0df;
+  --surface: #fbf8eb;
+  --surface-soft: #ece7d5;
+  --surface-hover: #e4deca;
+  --text: #161713;
+  --text-soft: #77776d;
+  --text-faint: #aaa99e;
+  --border: rgba(22, 23, 19, 0.1);
+  --border-strong: rgba(22, 23, 19, 0.18);
+  --pink: #efa7cf;
+  --lime: #c8ef45;
+  --lavender: #b9a4ee;
+  --sky: #a9c8ee;
+  --yellow: #efd35c;
+  --danger: #d85c72;
+  --accent: var(--pink);
+  --accent-text: #1a1418;
+  --control: rgba(22, 23, 19, 0.055);
+  --shadow: 0 16px 50px rgba(33, 31, 22, 0.08);
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Code", "Cascadia Mono", "Segoe UI Mono", monospace;
+  font-family: var(--font-ui);
+  background: var(--background);
+  color: var(--text);
+}
+
+:root[data-theme="night"] {
+  color-scheme: dark;
+  --background: #161714;
+  --surface: #1c1d1a;
+  --surface-soft: #252621;
+  --surface-hover: #2e302a;
+  --text: #f2efe1;
+  --text-soft: #9d9d91;
+  --text-faint: #62645d;
+  --border: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --control: rgba(255, 255, 255, 0.055);
+  --shadow: 0 20px 55px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-accent="pink"] {
+  --accent: var(--pink);
+}
+
+:root[data-accent="lime"] {
+  --accent: var(--lime);
+}
+
+:root[data-accent="lavender"] {
+  --accent: var(--lavender);
+}
+
+:root[data-accent="sky"] {
+  --accent: var(--sky);
+}
