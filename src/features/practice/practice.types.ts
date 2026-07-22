@@ -8,6 +8,13 @@ export interface TestConfiguration {
   numbers: boolean;
 }
 
+export interface KeystrokeStats {
+  correct: number;
+  incorrect: number;
+  currentCombo: number;
+  maxCombo: number;
+}
+
 export interface TestMetrics {
   wpm: number;
   rawWpm: number;
@@ -15,6 +22,9 @@ export interface TestMetrics {
   correctCharacters: number;
   incorrectCharacters: number;
   totalCharacters: number;
+  correctKeystrokes: number;
+  incorrectKeystrokes: number;
+  totalKeystrokes: number;
   currentCombo: number;
   maxCombo: number;
 }

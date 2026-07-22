@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-const releaseDuration = 520;
+const releaseDuration = 460;
 
 function getButton(target: EventTarget | null) {
   if (!(target instanceof Element)) {
@@ -9,15 +9,6 @@ function getButton(target: EventTarget | null) {
 
   const button = target.closest("button");
   return button instanceof HTMLButtonElement && !button.disabled ? button : null;
-}
-
-function setPressOrigin(button: HTMLButtonElement, clientX?: number, clientY?: number) {
-  const bounds = button.getBoundingClientRect();
-  const x = clientX === undefined ? bounds.width / 2 : clientX - bounds.left;
-  const y = clientY === undefined ? bounds.height / 2 : clientY - bounds.top;
-
-  button.style.setProperty("--press-x", `${x}px`);
-  button.style.setProperty("--press-y", `${y}px`);
 }
 
 export function PressFeedback() {
@@ -36,13 +27,12 @@ export function PressFeedback() {
       button.classList.remove("is-releasing");
     };
 
-    const press = (button: HTMLButtonElement, clientX?: number, clientY?: number) => {
+    const press = (button: HTMLButtonElement) => {
       if (activeButton && activeButton !== button) {
         activeButton.classList.remove("is-pressing");
       }
 
       clearRelease(button);
-      setPressOrigin(button, clientX, clientY);
       button.classList.add("is-pressing");
       activeButton = button;
     };
@@ -76,7 +66,7 @@ export function PressFeedback() {
       const button = getButton(event.target);
 
       if (button) {
-        press(button, event.clientX, event.clientY);
+        press(button);
       }
     };
 

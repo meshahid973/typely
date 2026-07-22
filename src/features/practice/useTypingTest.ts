@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TestResult } from "../../app/app.types";
-import type { TestConfiguration, TestStatus } from "./practice.types";
-import { calculateMetrics, calculateProgress, createTarget } from "./practice.utils";
+import type { KeystrokeStats, TestConfiguration, TestStatus } from "./practice.types";
+import {
+  calculateMetrics,
+  calculateProgress,
+  createTarget,
+  emptyKeystrokeStats,
+  recordKeystrokes,
+} from "./practice.utils";
 
 interface UseTypingTestOptions {
   configuration: TestConfiguration;
   onComplete: (result: TestResult) => void;
+}
+
+function freshKeystrokeStats(): KeystrokeStats {
+  return { ...emptyKeystrokeStats };
 }
 
 export function useTypingTest({ configuration, onComplete }: UseTypingTestOptions) {
@@ -13,11 +23,13 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<TestStatus>("ready");
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [keystrokes, setKeystrokes] = useState<KeystrokeStats>(freshKeystrokeStats);
   const [lastResult, setLastResult] = useState<TestResult | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const pausedAtRef = useRef<number | null>(null);
   const totalPausedRef = useRef(0);
   const inputRef = useRef("");
+  const keystrokesRef = useRef<KeystrokeStats>(freshKeystrokeStats());
   const statusRef = useRef<TestStatus>("ready");
 
   const setCurrentStatus = useCallback((next: TestStatus) => {
@@ -40,7 +52,7 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
         return;
       }
 
-      const metrics = calculateMetrics(finalInput, target, finalElapsed);
+      const metrics = calculateMetrics(finalInput, target, finalElapsed, keystrokesRef.current);
       const result: TestResult = {
         id: crypto.randomUUID(),
         completedAt: new Date().toISOString(),
@@ -53,6 +65,8 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
         correctCharacters: metrics.correctCharacters,
         incorrectCharacters: metrics.incorrectCharacters,
         totalCharacters: metrics.totalCharacters,
+        correctKeystrokes: metrics.correctKeystrokes,
+        incorrectKeystrokes: metrics.incorrectKeystrokes,
         maxCombo: metrics.maxCombo,
         punctuation: configuration.punctuation,
         numbers: configuration.numbers,
@@ -68,12 +82,15 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
 
   const reset = useCallback(() => {
     const nextTarget = createTarget(configuration);
+    const nextKeystrokes = freshKeystrokeStats();
     inputRef.current = "";
+    keystrokesRef.current = nextKeystrokes;
     startedAtRef.current = null;
     pausedAtRef.current = null;
     totalPausedRef.current = 0;
     setTarget(nextTarget);
     setInput("");
+    setKeystrokes(nextKeystrokes);
     setElapsedMs(0);
     setLastResult(null);
     setCurrentStatus("ready");
@@ -95,7 +112,7 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
       if (configuration.mode === "time" && elapsed >= configuration.value * 1000) {
         finish(inputRef.current, configuration.value * 1000);
       }
-    }, 50);
+    }, 80);
 
     return () => window.clearInterval(interval);
   }, [configuration, finish, getElapsed, status]);
@@ -119,6 +136,7 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
       }
 
       const limitedValue = nextValue.slice(0, target.length);
+      const previousInput = inputRef.current;
       const now = performance.now();
 
       if (statusRef.current === "ready" && limitedValue.length > 0) {
@@ -134,19 +152,28 @@ export function useTypingTest({ configuration, onComplete }: UseTypingTestOption
         setCurrentStatus("running");
       }
 
+      const nextKeystrokes = recordKeystrokes(
+        previousInput,
+        limitedValue,
+        target,
+        keystrokesRef.current,
+      );
+
       inputRef.current = limitedValue;
+      keystrokesRef.current = nextKeystrokes;
       setInput(limitedValue);
+      setKeystrokes(nextKeystrokes);
 
       if (configuration.mode === "words" && limitedValue.length >= target.length) {
         finish(limitedValue, getElapsed(now));
       }
     },
-    [configuration.mode, finish, getElapsed, setCurrentStatus, target.length],
+    [configuration.mode, finish, getElapsed, setCurrentStatus, target],
   );
 
   const metrics = useMemo(
-    () => calculateMetrics(input, target, elapsedMs),
-    [elapsedMs, input, target],
+    () => calculateMetrics(input, target, elapsedMs, keystrokes, status !== "complete"),
+    [elapsedMs, input, keystrokes, status, target],
   );
   const progress = useMemo(
     () => calculateProgress(configuration, input.length, target.length, elapsedMs),

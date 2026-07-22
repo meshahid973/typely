@@ -1,12 +1,11 @@
 .view-practice {
   display: flex;
-  width: min(1060px, 100%);
+  width: min(1240px, calc(100% - 64px));
   height: 100%;
   min-height: 0;
   flex-direction: column;
-  justify-content: center;
-  padding-top: 26px;
-  padding-bottom: 30px;
+  justify-content: flex-start;
+  padding: clamp(54px, 8.5vh, 92px) 0 36px;
   overflow: hidden;
 }
 
@@ -15,7 +14,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 30px;
+  margin-bottom: clamp(32px, 5vh, 52px);
   transition:
     opacity var(--motion-medium) var(--ease-out-quint),
     transform var(--motion-slow) var(--ease-out-expo),
@@ -23,13 +22,13 @@
 }
 
 .view-practice[data-status="running"] .practice-toolbar {
-  opacity: 0.22;
-  transform: translateY(-7px) scale(0.985);
-  filter: saturate(0.65);
+  opacity: 0.18;
+  transform: translateY(-8px) scale(0.985);
+  filter: saturate(0.7);
 }
 
 .view-practice[data-status="paused"] .practice-toolbar {
-  opacity: 0.42;
+  opacity: 0.38;
   transform: translateY(-4px) scale(0.99);
 }
 
@@ -52,6 +51,7 @@
 .mode-picker:hover {
   border-color: var(--border);
   background: color-mix(in srgb, var(--control-hover) 76%, transparent);
+  transform: translateY(-1px);
 }
 
 .mode-picker[data-disabled="true"] {
@@ -115,7 +115,7 @@
 .mode-icon.is-active {
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 5px 16px rgba(30, 29, 23, 0.065);
+  box-shadow: 0 5px 14px rgba(30, 29, 23, 0.06);
   animation: selection-pop var(--motion-medium) var(--ease-spring) both;
 }
 
@@ -135,34 +135,37 @@
 .typing-stage {
   position: relative;
   display: flex;
+  width: min(1180px, 100%);
   min-height: 0;
-  flex: 0 1 440px;
+  flex: 0 0 auto;
   flex-direction: column;
+  margin: 0 auto;
 }
 
 .live-area {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .live-stats {
   display: flex;
-  min-height: 59px;
+  min-height: 62px;
   align-items: flex-end;
-  gap: 24px;
+  gap: 28px;
 }
 
 .live-stat {
   display: flex;
-  min-width: 66px;
+  min-width: 70px;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .live-stat strong {
   color: var(--text-soft);
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 680;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
   line-height: 1;
 }
@@ -177,8 +180,7 @@
 
 .live-stat-main strong {
   color: color-mix(in srgb, var(--accent) 76%, var(--text));
-  font-size: 35px;
-  text-shadow: 0 0 18px var(--accent-glow);
+  font-size: 38px;
 }
 
 .combo-counter {
@@ -200,6 +202,7 @@
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 730;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.045em;
   line-height: 1;
 }
@@ -210,8 +213,8 @@
 }
 
 .test-progress {
-  height: 2px;
-  margin-top: 11px;
+  height: 3px;
+  margin-top: 12px;
   overflow: hidden;
   border-radius: 999px;
   background: var(--border);
@@ -223,16 +226,15 @@
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
-  box-shadow: 0 0 12px var(--accent-glow);
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 90ms linear;
+  transition: transform 105ms linear;
 }
 
 .typing-surface {
   position: relative;
+  height: clamp(260px, 38vh, 400px);
   min-height: 0;
-  flex: 1;
   cursor: text;
   animation: words-in var(--motion-slow) var(--ease-out-expo) both;
 }
@@ -256,44 +258,44 @@
 .typing-copy {
   position: relative;
   height: 100%;
-  min-height: 245px;
   overflow: hidden;
-  padding: 23px 0;
+  padding: 25px 0 34px;
   color: var(--text-faint);
   font-family: var(--font-mono);
-  font-size: clamp(27px, 3.05vw, 37px);
+  font-size: clamp(34px, 2.35vw, 40px);
   font-weight: 550;
-  line-height: 1.52;
-  letter-spacing: -0.04em;
+  line-height: 1.48;
+  letter-spacing: -0.038em;
   scroll-behavior: var(--scroll-behavior);
   white-space: pre-wrap;
-  mask-image: linear-gradient(to bottom, transparent 0, black 13%, black 87%, transparent 100%);
   transition:
     opacity var(--motion-medium) ease,
-    filter var(--motion-medium) ease,
     transform var(--motion-slow) var(--ease-out-expo);
 }
 
 .typing-surface[data-status="paused"] .typing-copy {
-  opacity: 0.48;
-  filter: blur(1.5px);
-  transform: scale(0.995);
+  opacity: 0.42;
+  transform: translateY(2px) scale(0.997);
+}
+
+.typing-word {
+  display: inline-block;
+  white-space: pre;
 }
 
 .typing-character {
   position: relative;
-  display: inline;
+  display: inline-block;
   border-radius: 3px;
   transform-origin: center bottom;
   transition:
     color 55ms linear,
-    background-color 55ms linear,
-    text-shadow var(--motion-fast) ease;
+    background-color 55ms linear;
 }
 
 .typing-character.is-correct {
   color: var(--text);
-  animation: character-hit 165ms var(--ease-out-expo) both;
+  animation: character-hit 150ms var(--ease-out-expo) both;
 }
 
 .typing-character.is-incorrect {
@@ -302,8 +304,7 @@
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--danger) 22%, transparent);
-  animation: character-error 190ms var(--ease-out-quint) both;
+  animation: character-error 185ms var(--ease-out-quint) both;
 }
 
 .typing-character.is-active {
@@ -317,17 +318,15 @@
   left: 0;
   border-radius: 999px;
   background: var(--accent);
-  box-shadow: 0 0 10px var(--accent-glow);
   opacity: 0;
   pointer-events: none;
   will-change: transform, width, height;
   transition:
-    transform 62ms var(--ease-out-quint),
+    transform 72ms var(--ease-out-quint),
     width var(--motion-fast) var(--ease-out-quint),
     height var(--motion-fast) var(--ease-out-quint),
     opacity var(--motion-fast) ease,
-    background-color var(--motion-medium) ease,
-    box-shadow var(--motion-medium) ease;
+    background-color var(--motion-medium) ease;
 }
 
 .typing-caret::after {
@@ -343,10 +342,22 @@
   opacity: 1;
 }
 
+.typing-impact {
+  position: absolute;
+  z-index: 1;
+  width: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-4px);
+  animation: typing-impact 220ms var(--ease-out-expo) both;
+}
+
 .typing-surface[data-caret="block"] .typing-caret {
   border-radius: 4px;
   background: color-mix(in srgb, var(--accent) 34%, transparent);
-  box-shadow: 0 0 14px var(--accent-glow);
 }
 
 .typing-surface:not(.is-focused) .typing-caret {
@@ -361,7 +372,7 @@
   padding: 5px 9px;
   border: 1px solid var(--border);
   border-radius: 7px;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   color: var(--text-soft);
   font-size: 10px;
   font-weight: 650;
@@ -375,7 +386,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin-top: 19px;
+  margin-top: 18px;
   color: var(--text-faint);
   font-size: 10px;
   font-weight: 600;
@@ -407,7 +418,25 @@
   text-align: center;
 }
 
+@media (min-width: 1500px) and (min-height: 820px) {
+  .view-practice {
+    width: min(1320px, calc(100% - 96px));
+  }
+
+  .typing-stage {
+    width: min(1240px, 100%);
+  }
+
+  .typing-copy {
+    font-size: clamp(36px, 2.2vw, 42px);
+  }
+}
+
 @media (max-width: 960px) {
+  .view-practice {
+    width: calc(100% - 44px);
+  }
+
   .mode-button {
     width: 32px;
     padding: 0;
@@ -423,6 +452,11 @@
 }
 
 @media (max-width: 820px) {
+  .view-practice {
+    width: calc(100% - 32px);
+    padding-top: 46px;
+  }
+
   .practice-toolbar {
     align-items: flex-start;
   }
@@ -432,6 +466,20 @@
   }
 
   .typing-copy {
-    font-size: 27px;
+    font-size: 28px;
+  }
+}
+
+@media (max-height: 650px) {
+  .view-practice {
+    padding-top: 34px;
+  }
+
+  .practice-toolbar {
+    margin-bottom: 22px;
+  }
+
+  .typing-surface {
+    height: 250px;
   }
 }

@@ -25,6 +25,8 @@ export interface TestResult {
   correctCharacters: number;
   incorrectCharacters: number;
   totalCharacters: number;
+  correctKeystrokes?: number;
+  incorrectKeystrokes?: number;
   maxCombo: number;
   punctuation: boolean;
   numbers: boolean;

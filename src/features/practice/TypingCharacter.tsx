@@ -7,6 +7,11 @@ export interface CharacterUnit {
   index: number;
 }
 
+export interface TypingWordUnit {
+  id: string;
+  characters: CharacterUnit[];
+}
+
 interface TypingCharacterProps {
   unit: CharacterUnit;
   typedCharacter: string | undefined;
@@ -14,18 +19,36 @@ interface TypingCharacterProps {
   elementRef?: Ref<HTMLSpanElement>;
 }
 
-export function createCharacterUnits(target: string) {
-  const occurrences = new Map<string, number>();
+export function createTypingWords(target: string) {
+  let cursor = 0;
+  const sourceWords = target.split(" ");
 
-  return Array.from(target, (value, index) => {
-    const occurrence = (occurrences.get(value) ?? 0) + 1;
-    occurrences.set(value, occurrence);
+  return sourceWords.map((word, wordPosition) => {
+    const start = cursor;
+    const characters = Array.from(word, (value) => {
+      const unit = {
+        id: `${cursor}-${value.codePointAt(0) ?? 0}`,
+        value,
+        index: cursor,
+      } satisfies CharacterUnit;
+
+      cursor += value.length;
+      return unit;
+    });
+
+    if (wordPosition < sourceWords.length - 1) {
+      characters.push({
+        id: `${cursor}-32`,
+        value: " ",
+        index: cursor,
+      });
+      cursor += 1;
+    }
 
     return {
-      id: `${value.codePointAt(0) ?? 0}-${occurrence}`,
-      value,
-      index,
-    } satisfies CharacterUnit;
+      id: `${start}-${word}`,
+      characters,
+    } satisfies TypingWordUnit;
   });
 }
 

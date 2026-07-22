@@ -1,10 +1,73 @@
-import type { TestConfiguration, TestMetrics } from "./practice.types";
+import type { KeystrokeStats, TestConfiguration, TestMetrics } from "./practice.types";
 import { commonWords } from "./words";
 
 const punctuationMarks = [".", ",", "?", "!", ";"];
 
+export const emptyKeystrokeStats: KeystrokeStats = {
+  correct: 0,
+  incorrect: 0,
+  currentCombo: 0,
+  maxCombo: 0,
+};
+
 function randomItem<T>(items: T[]) {
   return items[Math.floor(Math.random() * items.length)];
+}
+
+function deriveKeystrokeStats(input: string, target: string) {
+  let correct = 0;
+  let incorrect = 0;
+  let currentCombo = 0;
+  let maxCombo = 0;
+
+  for (let index = 0; index < input.length; index += 1) {
+    if (input[index] === target[index]) {
+      correct += 1;
+      currentCombo += 1;
+      maxCombo = Math.max(maxCombo, currentCombo);
+    } else {
+      incorrect += 1;
+      currentCombo = 0;
+    }
+  }
+
+  return { correct, incorrect, currentCombo, maxCombo };
+}
+
+export function recordKeystrokes(
+  previousInput: string,
+  nextInput: string,
+  target: string,
+  current: KeystrokeStats,
+) {
+  let sharedLength = 0;
+  const comparisonLength = Math.min(previousInput.length, nextInput.length);
+
+  while (
+    sharedLength < comparisonLength &&
+    previousInput[sharedLength] === nextInput[sharedLength]
+  ) {
+    sharedLength += 1;
+  }
+
+  if (sharedLength === nextInput.length) {
+    return current;
+  }
+
+  const next = { ...current };
+
+  for (let index = sharedLength; index < nextInput.length; index += 1) {
+    if (nextInput[index] === target[index]) {
+      next.correct += 1;
+      next.currentCombo += 1;
+      next.maxCombo = Math.max(next.maxCombo, next.currentCombo);
+    } else {
+      next.incorrect += 1;
+      next.currentCombo = 0;
+    }
+  }
+
+  return next;
 }
 
 export function createTarget(configuration: TestConfiguration) {
@@ -31,28 +94,33 @@ export function createTarget(configuration: TestConfiguration) {
   return words.join(" ");
 }
 
-export function calculateMetrics(input: string, target: string, elapsedMs: number): TestMetrics {
+export function calculateMetrics(
+  input: string,
+  target: string,
+  elapsedMs: number,
+  keystrokes?: KeystrokeStats,
+  live = false,
+): TestMetrics {
   let correctCharacters = 0;
-  let currentCombo = 0;
-  let maxCombo = 0;
 
   for (let index = 0; index < input.length; index += 1) {
     if (input[index] === target[index]) {
       correctCharacters += 1;
-      currentCombo += 1;
-      maxCombo = Math.max(maxCombo, currentCombo);
-    } else {
-      currentCombo = 0;
     }
   }
 
-  const minutes = Math.max(elapsedMs / 60000, 1 / 60000);
+  const recorded = keystrokes ?? deriveKeystrokeStats(input, target);
   const totalCharacters = input.length;
   const incorrectCharacters = Math.max(0, totalCharacters - correctCharacters);
-  const wpm = Math.round(correctCharacters / 5 / minutes);
-  const rawWpm = Math.round(totalCharacters / 5 / minutes);
+  const totalKeystrokes = recorded.correct + recorded.incorrect;
+  const minutes = elapsedMs / 60000;
+  const stableLiveReading = elapsedMs >= 500 && totalCharacters >= 2;
+  const canCalculateSpeed = minutes > 0 && (!live || stableLiveReading);
+  const rawCharacters = Math.max(totalCharacters, totalKeystrokes);
+  const wpm = canCalculateSpeed ? Math.round(correctCharacters / 5 / minutes) : 0;
+  const rawWpm = canCalculateSpeed ? Math.round(rawCharacters / 5 / minutes) : 0;
   const accuracy =
-    totalCharacters === 0 ? 100 : Math.round((correctCharacters / totalCharacters) * 1000) / 10;
+    totalKeystrokes === 0 ? 100 : Math.round((recorded.correct / totalKeystrokes) * 1000) / 10;
 
   return {
     wpm,
@@ -61,8 +129,11 @@ export function calculateMetrics(input: string, target: string, elapsedMs: numbe
     correctCharacters,
     incorrectCharacters,
     totalCharacters,
-    currentCombo,
-    maxCombo,
+    correctKeystrokes: recorded.correct,
+    incorrectKeystrokes: recorded.incorrect,
+    totalKeystrokes,
+    currentCombo: recorded.currentCombo,
+    maxCombo: recorded.maxCombo,
   };
 }
 

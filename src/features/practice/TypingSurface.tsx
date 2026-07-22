@@ -14,7 +14,7 @@ import {
 import { useApp } from "../../app/AppContext";
 import { cn } from "../../lib/cn";
 import type { TestStatus } from "./practice.types";
-import { createCharacterUnits, TypingCharacter } from "./TypingCharacter";
+import { createTypingWords, TypingCharacter } from "./TypingCharacter";
 
 interface TypingSurfaceProps {
   target: string;
@@ -46,14 +46,24 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
   const copyElement = useRef<HTMLDivElement>(null);
   const activeCharacter = useRef<HTMLSpanElement>(null);
   const lastScrollTop = useRef(0);
+  const previousInputLength = useRef(0);
   const [focused, setFocused] = useState(false);
   const [caret, setCaret] = useState<CaretPosition>(hiddenCaret);
-  const characters = useMemo(() => createCharacterUnits(target), [target]);
+  const [impact, setImpact] = useState(0);
+  const words = useMemo(() => createTypingWords(target), [target]);
   const activeIndex = input.length;
 
   useEffect(() => {
     inputElement.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (input.length > previousInputLength.current) {
+      setImpact((value) => value + 1);
+    }
+
+    previousInputLength.current = input.length;
+  }, [input.length]);
 
   const measureCaret = useCallback(() => {
     const copy = copyElement.current;
@@ -81,7 +91,7 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
       0,
       Math.min(
         copy.scrollHeight - copy.clientHeight,
-        active.offsetTop - copy.clientHeight / 2 + characterHeight / 2,
+        active.offsetTop - copy.clientHeight * 0.42 + characterHeight / 2,
       ),
     );
 
@@ -135,6 +145,10 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
     height: `${caret.height}px`,
     transform: `translate3d(${caret.x}px, ${caret.y}px, 0)`,
   } as CSSProperties;
+  const impactStyle = {
+    left: `${caret.x}px`,
+    top: `${caret.y + caret.height + 3}px`,
+  } as CSSProperties;
 
   return (
     <section
@@ -164,19 +178,26 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
       />
       <div ref={copyElement} className="typing-copy" aria-hidden="true">
         <span className={cn("typing-caret", caret.visible && "is-visible")} style={caretStyle} />
-        {characters.map((unit) => {
-          const active = unit.index === activeIndex && status !== "complete";
+        {impact > 0 && caret.visible && (
+          <span key={impact} className="typing-impact" style={impactStyle} />
+        )}
+        {words.map((word) => (
+          <span className="typing-word" key={word.id}>
+            {word.characters.map((unit) => {
+              const active = unit.index === activeIndex && status !== "complete";
 
-          return (
-            <TypingCharacter
-              key={unit.id}
-              unit={unit}
-              typedCharacter={input[unit.index]}
-              active={active}
-              elementRef={active ? activeCharacter : undefined}
-            />
-          );
-        })}
+              return (
+                <TypingCharacter
+                  key={unit.id}
+                  unit={unit}
+                  typedCharacter={input[unit.index]}
+                  active={active}
+                  elementRef={active ? activeCharacter : undefined}
+                />
+              );
+            })}
+          </span>
+        ))}
       </div>
       {!focused && status !== "complete" && status !== "paused" && (
         <div className="typing-message">click to focus</div>

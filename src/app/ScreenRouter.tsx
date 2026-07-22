@@ -64,7 +64,7 @@ export function ScreenRouter() {
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => setPhase("idle"));
       });
-    }, 115);
+    }, 125);
 
     return () => window.clearTimeout(timeout);
   }, [displayedView, settings.reducedMotion, view]);

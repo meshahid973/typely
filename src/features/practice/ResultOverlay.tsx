@@ -39,14 +39,12 @@ export function ResultOverlay({ result, onRestart, onHistory }: ResultOverlayPro
             <strong>{result.rawWpm}</strong>
           </div>
           <div style={detailDelay(1)}>
-            <span>combo</span>
-            <strong>{result.maxCombo}</strong>
+            <span>mistakes</span>
+            <strong>{result.incorrectKeystrokes ?? result.incorrectCharacters}</strong>
           </div>
           <div style={detailDelay(2)}>
-            <span>characters</span>
-            <strong>
-              {result.correctCharacters}/{result.totalCharacters}
-            </strong>
+            <span>combo</span>
+            <strong>{result.maxCombo}</strong>
           </div>
           <div style={detailDelay(3)}>
             <span>time</span>
