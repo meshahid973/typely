@@ -1,0 +1,92 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          $tagVersion = "${{ github.ref_name }}".TrimStart("v")
+          $packageVersion = (Get-Content package.json | ConvertFrom-Json).version
+          $tauriVersion = (Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          $cargoVersion = (
+            Select-String -Path src-tauri/Cargo.toml -Pattern '^version\s*=\s*"([^"]+)"'
+          ).Matches[0].Groups[1].Value
+
+          if ($tagVersion -ne $packageVersion) {
+            throw "Tag $tagVersion does not match package.json $packageVersion."
+          }
+
+          if ($tagVersion -ne $tauriVersion) {
+            throw "Tag $tagVersion does not match tauri.conf.json $tauriVersion."
+          }
+
+          if ($tagVersion -ne $cargoVersion) {
+            throw "Tag $tagVersion does not match Cargo.toml $cargoVersion."
+          }
+
+      - name: Verify frontend
+        run: pnpm check
+
+      - name: Verify Rust
+        shell: pwsh
+        run: |
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+          cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Build Windows installer
+        run: pnpm tauri build -- --bundles nsis
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installer = Get-ChildItem `
+            "src-tauri/target/release/bundle/nsis" `
+            -Filter "*setup.exe" |
+            Select-Object -First 1
+
+          if (-not $installer) {
+            throw "The NSIS installer was not created."
+          }
+
+          $hash = (Get-FileHash -Algorithm SHA256 $installer.FullName).Hash.ToLowerInvariant()
+          "$hash  $($installer.Name)" |
+            Set-Content -Path "SHA256SUMS.txt" -Encoding utf8
+
+          gh release create "${{ github.ref_name }}" `
+            $installer.FullName `
+            "SHA256SUMS.txt" `
+            --title "Typely ${{ github.ref_name }}" `
+            --generate-notes `
+            --latest

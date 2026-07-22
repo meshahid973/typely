@@ -11,15 +11,21 @@
   --cadence-speed: 0;
   --cadence-consistency: 1;
   position: relative;
-  display: grid;
+  display: flex;
   width: calc(100% - 64px);
   max-width: 1200px;
   height: 100%;
   min-width: 0;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(22px, 4.2vh, 44px);
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(20px, 2.6vh, 30px);
   margin: 0 auto;
-  padding: clamp(28px, 5.4vh, 64px) 0 clamp(24px, 5vh, 58px);
+  padding: clamp(46px, 7vh, 78px) 0 34px;
+}
+
+.view-practice[data-mode="words"] .practice-stage {
+  padding-top: clamp(42px, 6vh, 66px);
 }
 
 .practice-toolbar {
@@ -108,11 +114,9 @@
   max-width: 1000px;
   min-width: 0;
   min-height: 0;
-  align-self: center;
-  justify-self: center;
+  flex: 0 1 auto;
   flex-direction: column;
-  justify-content: center;
-  transform: translateY(clamp(-20px, -2.2vh, -8px));
+  justify-content: flex-start;
   transition:
     opacity var(--motion-standard) var(--ease-out),
     transform var(--motion-screen) var(--ease-out);
@@ -121,7 +125,7 @@
 .live-hud {
   position: relative;
   width: 100%;
-  margin-bottom: clamp(24px, 4.2vh, 42px);
+  margin-bottom: clamp(10px, 1.6vh, 18px);
   transition:
     opacity var(--motion-standard) var(--ease-out),
     transform var(--motion-standard) var(--ease-out);
@@ -289,12 +293,24 @@
 .typing-surface {
   position: relative;
   width: 100%;
-  height: clamp(230px, 34vh, 360px);
+  height: clamp(190px, 25vh, 280px);
   min-height: 0;
   flex: 0 0 auto;
   overflow: hidden;
   cursor: text;
   contain: layout paint;
+}
+
+.view-practice[data-mode="words"] .typing-surface {
+  height: clamp(142px, 18vh, 200px);
+}
+
+.view-practice {
+  --typing-hints-margin: clamp(14px, 2.6vh, 24px);
+}
+
+.view-practice[data-mode="words"] {
+  --typing-hints-margin: clamp(10px, 1.8vh, 18px);
 }
 
 .typing-input {
@@ -502,7 +518,7 @@
   display: flex;
   justify-content: center;
   gap: 18px;
-  margin-top: clamp(14px, 2.6vh, 24px);
+  margin-top: var(--typing-hints-margin);
   opacity: 1;
   transition:
     opacity var(--motion-standard) var(--ease-out),
@@ -525,16 +541,19 @@
 @media (min-width: 1800px) and (min-height: 900px) {
   .practice-stage {
     width: min(1240px, calc(100% - 96px));
-    padding-top: clamp(48px, 6.5vh, 82px);
+    padding-top: clamp(58px, 7vh, 88px);
   }
 
   .practice-session {
     width: min(1060px, 100%);
-    transform: translateY(-24px);
   }
 
   .typing-surface {
-    height: clamp(300px, 34vh, 390px);
+    height: clamp(220px, 25vh, 290px);
+  }
+
+  .view-practice[data-mode="words"] .typing-surface {
+    height: clamp(160px, 18vh, 210px);
   }
 
   .typing-track {
@@ -578,13 +597,9 @@
 
 @media (max-height: 680px) {
   .practice-stage {
-    gap: 18px;
+    gap: 14px;
     padding-top: 20px;
-    padding-bottom: 16px;
-  }
-
-  .practice-session {
-    transform: translateY(-6px);
+    padding-bottom: 22px;
   }
 
   .live-hud {
@@ -610,8 +625,8 @@
     line-height: 1.36;
   }
 
-  .typing-hints {
-    margin-top: 10px;
+  .view-practice[data-mode] {
+    --typing-hints-margin: 10px;
   }
 }
 

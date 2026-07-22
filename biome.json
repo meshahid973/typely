@@ -4,10 +4,12 @@
     "includes": [
       "**",
       "!node_modules",
+      "!**/node_modules",
       "!dist",
       "!.typely-backups",
       "!src-tauri/target",
-      "!src-tauri/gen"
+      "!src-tauri/gen",
+      "!cloudflare/typely-api/.wrangler"
     ]
   },
   "formatter": {

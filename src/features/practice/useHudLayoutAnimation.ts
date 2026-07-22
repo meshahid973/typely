@@ -27,8 +27,11 @@ export function useHudLayoutAnimation(
   reducedMotion: boolean,
 ) {
   const previousRects = useRef(new Map<string, RectSnapshot>());
+  const previousLayoutKey = useRef("");
 
   useLayoutEffect(() => {
+    const layoutChanged = previousLayoutKey.current !== layoutKey;
+    previousLayoutKey.current = layoutKey;
     const container = containerRef.current;
 
     if (!container) {
@@ -49,7 +52,7 @@ export function useHudLayoutAnimation(
       const previous = previousRects.current.get(key);
       currentRects.set(key, current);
 
-      if (!previous || reducedMotion) {
+      if (!layoutChanged || !previous || reducedMotion) {
         continue;
       }
 
@@ -81,5 +84,5 @@ export function useHudLayoutAnimation(
     }
 
     previousRects.current = currentRects;
-  }, [containerRef, layoutKey, reducedMotion]);
+  });
 }

@@ -38,11 +38,14 @@ export function useTypingTextState({
   const charactersRef = useRef<HTMLSpanElement[]>([]);
   const previousInputRef = useRef("");
   const previousCorrectedRef = useRef<ReadonlySet<number>>(new Set());
+  const previousTargetRef = useRef("");
 
   useLayoutEffect(() => {
+    const targetChanged = previousTargetRef.current !== target;
+    previousTargetRef.current = target;
     const track = trackElement.current;
 
-    if (!track) {
+    if (!track || !targetChanged) {
       return;
     }
 
@@ -51,7 +54,7 @@ export function useTypingTextState({
     );
     previousInputRef.current = "";
     previousCorrectedRef.current = new Set();
-  }, [target, trackElement]);
+  });
 
   useLayoutEffect(() => {
     const characters = charactersRef.current;

@@ -65,6 +65,7 @@ export const TypingSurface = memo(function TypingSurface({
     activeIndex,
     targetLength: target.length,
     caretStyle: settings.caretStyle,
+    lineAnchor: configuration.mode === "words" ? 0.22 : 0.36,
     status,
   });
 

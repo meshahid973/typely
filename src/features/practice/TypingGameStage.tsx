@@ -37,6 +37,7 @@ export function TypingGameStage({
   const stageTimeout = useRef<number | null>(null);
   const cadenceFrame = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const previousTarget = useRef("");
   const test = useTypingTest({
     configuration,
     previousBestWpm,
@@ -81,6 +82,13 @@ export function TypingGameStage({
   }, [overlayOpen, test.pause]);
 
   useEffect(() => {
+    const targetChanged = previousTarget.current !== test.target;
+    previousTarget.current = test.target;
+
+    if (!targetChanged) {
+      return;
+    }
+
     clearStageTimeout();
 
     if (settings.reducedMotion) {
@@ -93,7 +101,7 @@ export function TypingGameStage({
       setStagePhase("idle");
       stageTimeout.current = null;
     }, 430);
-  }, [clearStageTimeout, settings.reducedMotion, test.target]);
+  });
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -183,6 +191,7 @@ export function TypingGameStage({
       data-status={test.status}
       data-has-result={hasResult}
       data-stage-phase={stagePhase}
+      data-mode={configuration.mode}
     >
       <div ref={stageRef} className="practice-stage">
         <PracticeToolbar

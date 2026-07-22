@@ -1,0 +1,200 @@
+.account-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+  background: var(--surface);
+}
+
+.account-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.account-panel-heading > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--accent-strong);
+}
+
+.account-panel-heading h3,
+.account-panel-heading p {
+  margin: 0;
+}
+
+.account-panel-heading h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: -0.03em;
+}
+
+.account-panel-heading p {
+  margin-top: 4px;
+  color: var(--foreground-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.account-server-state {
+  margin-top: 14px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--foreground-muted);
+  font-size: 11px;
+}
+
+.account-server-state[data-state="offline"] {
+  border-left: 3px solid var(--danger);
+}
+
+.auth-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 16px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+
+.auth-mode-switch button {
+  min-height: 34px;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--foreground-muted);
+  font-size: 11px;
+  font-weight: 690;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-standard) var(--ease-out),
+    transform var(--motion-standard) var(--ease-spring);
+}
+
+.auth-mode-switch button:hover {
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.auth-mode-switch button[aria-pressed="true"] {
+  background: var(--surface-selected);
+  color: var(--foreground);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: 14px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--foreground-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.auth-form input {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--background);
+  color: var(--foreground);
+  user-select: text;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-standard) var(--ease-out);
+}
+
+.auth-form input:focus {
+  border-color: var(--accent);
+}
+
+.auth-form small {
+  color: var(--foreground-faint);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.auth-form .game-button {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.account-message {
+  margin: 10px 0 0;
+  color: var(--foreground-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.account-message[data-error="true"] {
+  color: var(--danger);
+}
+
+.account-user-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 11px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.account-user-row span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-user-row small {
+  color: var(--foreground-faint);
+  font-size: 10px;
+}
+
+.account-sync-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.account-sync-actions .game-button {
+  width: 100%;
+}
+
+.account-signout {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 0 8px;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--foreground-muted);
+  font-size: 11px;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.account-signout:hover {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+@media (max-width: 620px) {
+  .account-sync-actions {
+    grid-template-columns: 1fr;
+  }
+}

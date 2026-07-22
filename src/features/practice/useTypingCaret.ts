@@ -8,6 +8,7 @@ interface UseTypingCaretOptions {
   activeIndex: number;
   targetLength: number;
   caretStyle: CaretStyle;
+  lineAnchor: number;
   status: TestStatus;
 }
 
@@ -21,6 +22,7 @@ export function useTypingCaret({
   activeIndex,
   targetLength,
   caretStyle,
+  lineAnchor,
   status,
 }: UseTypingCaretOptions) {
   const lineJumpFrame = useRef<number | null>(null);
@@ -75,7 +77,7 @@ export function useTypingCaret({
       lineHeightRef.current = lineHeight;
     }
 
-    const trackPadding = Math.max(0, (viewport.clientHeight - lineHeight) / 2);
+    const trackPadding = Math.max(0, (viewport.clientHeight - lineHeight) * lineAnchor);
 
     if (Math.abs(trackPadding - lastTrackPadding.current) > 0.5) {
       lastTrackPadding.current = trackPadding;
@@ -121,7 +123,16 @@ export function useTypingCaret({
 
     lastLineTop.current = activeTop;
     lastActiveIndex.current = activeIndex;
-  }, [activeIndex, caretStyle, markLineJump, status, targetLength, trackElement, viewportElement]);
+  }, [
+    activeIndex,
+    caretStyle,
+    lineAnchor,
+    markLineJump,
+    status,
+    targetLength,
+    trackElement,
+    viewportElement,
+  ]);
 
   measureRef.current = measure;
 

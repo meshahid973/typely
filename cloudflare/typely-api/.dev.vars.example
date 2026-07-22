@@ -1,0 +1,2 @@
+PASSWORD_PEPPER=replace-with-a-long-random-secret
+RATE_LIMIT_SECRET=replace-with-a-different-long-random-secret

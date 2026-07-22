@@ -66,7 +66,7 @@ export function SettingsDrawer() {
       onClose={closeSettings}
     >
       <div className="settings-layout">
-        <nav
+        <div
           className="settings-categories"
           role="tablist"
           aria-label="Settings categories"
@@ -95,14 +95,13 @@ export function SettingsDrawer() {
               </button>
             );
           })}
-        </nav>
+        </div>
         <div
           id={activePanelId}
           className="settings-category-content"
           key={category}
           role="tabpanel"
           aria-labelledby={activeTabId}
-          tabIndex={0}
         >
           {category === "appearance" && (
             <AppearanceSettings settings={settings} onChange={updateSettings} />

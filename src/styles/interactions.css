@@ -486,3 +486,19 @@ button:disabled {
     display: none;
   }
 }
+
+@media (max-width: 900px) {
+  .navigation-button span {
+    display: none;
+  }
+
+  .navigation-button {
+    width: 34px;
+    padding-inline: 5px;
+    justify-content: center;
+  }
+
+  .navigation-button-marker {
+    display: none;
+  }
+}

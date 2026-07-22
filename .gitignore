@@ -8,3 +8,7 @@ dist
 .typely-backups
 src-tauri/target
 src-tauri/gen
+.env
+.env.local
+cloudflare/typely-api/.dev.vars
+cloudflare/typely-api/.wrangler

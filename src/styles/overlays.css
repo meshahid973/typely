@@ -414,6 +414,19 @@
   animation: modifier-row-in 360ms var(--ease-out) var(--modifier-delay) both;
 }
 
+.modifier-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  color: var(--foreground-muted);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-standard) var(--ease-spring);
+}
+
 .modifier-row[data-enabled="true"] {
   background: var(--accent-soft);
   transform: translateX(3px);
@@ -426,19 +439,6 @@
 
 .modifier-row:last-child {
   border-bottom: 0;
-}
-
-.modifier-icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: var(--radius-small);
-  background: var(--surface);
-  color: var(--foreground-muted);
-  transition:
-    color var(--motion-fast) var(--ease-out),
-    transform var(--motion-standard) var(--ease-spring);
 }
 
 .modifier-multiplier {

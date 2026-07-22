@@ -23,12 +23,13 @@ interface LiveStatsProps {
   reducedMotion: boolean;
 }
 
-function getTimeValue(configuration: TestConfiguration, elapsedMs: number, progress: number) {
+function getPrimaryValue(configuration: TestConfiguration, elapsedMs: number, progress: number) {
   if (configuration.mode === "time") {
     return Math.max(0, configuration.value - Math.floor(elapsedMs / 1000));
   }
 
-  return `${Math.round(progress * 100)}%`;
+  const completedWords = Math.floor(progress * configuration.value);
+  return Math.max(0, configuration.value - completedWords);
 }
 
 function getComboMessage(feedback: TypingFeedback, combo: number) {
@@ -62,8 +63,8 @@ export function LiveStats({
   const gridRef = useRef<HTMLDivElement>(null);
   const comboRef = useRef<HTMLDivElement>(null);
   const started = status !== "ready";
-  const timeValue = getTimeValue(configuration, elapsedMs, progress);
-  const timeLabel = configuration.mode === "time" ? "seconds" : "progress";
+  const timeValue = getPrimaryValue(configuration, elapsedMs, progress);
+  const timeLabel = configuration.mode === "time" ? "seconds" : "words";
   const comboVisible = showLiveStats && metrics.currentCombo >= 10;
   const comboMessage = getComboMessage(feedback, metrics.currentCombo);
   const comboFeedbackVisible = Boolean(

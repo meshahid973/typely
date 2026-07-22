@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app/App";
 import { AppProvider } from "./app/AppProvider";
+import { AuthProvider } from "./features/auth/AuthProvider";
 import "./styles/index.css";
 
 const root = document.getElementById("root");
@@ -12,8 +13,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </AuthProvider>
   </StrictMode>,
 );

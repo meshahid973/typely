@@ -6,8 +6,11 @@ export function useListLayoutAnimation(
   reducedMotion: boolean,
 ) {
   const previousPositions = useRef(new Map<string, number>());
+  const previousLayoutKey = useRef("");
 
   useLayoutEffect(() => {
+    const layoutChanged = previousLayoutKey.current !== layoutKey;
+    previousLayoutKey.current = layoutKey;
     const container = containerRef.current;
 
     if (!container) {
@@ -28,7 +31,7 @@ export function useListLayoutAnimation(
       const previousTop = previousPositions.current.get(key);
       nextPositions.set(key, top);
 
-      if (previousTop === undefined || reducedMotion) {
+      if (!layoutChanged || previousTop === undefined || reducedMotion) {
         continue;
       }
 
@@ -52,5 +55,5 @@ export function useListLayoutAnimation(
     }
 
     previousPositions.current = nextPositions;
-  }, [containerRef, layoutKey, reducedMotion]);
+  });
 }

@@ -1,0 +1,133 @@
+.update-banner {
+  z-index: 25;
+  display: grid;
+  min-height: 46px;
+  flex: 0 0 auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px 7px 15px;
+  background: #2563eb;
+  color: #ffffff;
+  animation: update-banner-in 280ms var(--ease-out) both;
+}
+
+.update-banner[data-test="true"] {
+  background: #1d4ed8;
+}
+
+.update-banner-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, #ffffff 34%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, #ffffff 12%, transparent);
+}
+
+.update-banner-copy {
+  min-width: 0;
+}
+
+.update-banner-copy strong,
+.update-banner-copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.update-banner-copy strong {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.update-banner-copy span {
+  margin-top: 1px;
+  color: color-mix(in srgb, #ffffff 82%, transparent);
+  font-size: 10px;
+}
+
+.update-banner-action,
+.update-banner-close {
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    opacity var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.update-banner-action {
+  display: inline-flex;
+  height: 31px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.update-banner-action:hover {
+  transform: translateY(-1px);
+}
+
+.update-banner-action:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.update-banner-action:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.update-banner-close {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.update-banner-close:hover {
+  background: color-mix(in srgb, #ffffff 14%, transparent);
+}
+
+@keyframes update-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .update-banner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .update-banner-copy span {
+    display: none;
+  }
+
+  .update-banner-action {
+    width: 31px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .update-banner-close {
+    display: none;
+  }
+}

@@ -53,10 +53,11 @@ select:focus-visible {
 }
 
 .app-window {
-  position: relative;
+  position: fixed;
+  inset: 0;
   display: flex;
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
   flex-direction: column;
   overflow: hidden;
   background: var(--background);
@@ -266,20 +267,6 @@ select:focus-visible {
 }
 
 @media (max-width: 900px) {
-  .navigation-button span {
-    display: none;
-  }
-
-  .navigation-button {
-    width: 34px;
-    padding-inline: 5px;
-    justify-content: center;
-  }
-
-  .navigation-button-marker {
-    display: none;
-  }
-
   .view {
     width: calc(100% - 32px);
   }

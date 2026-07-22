@@ -4,6 +4,7 @@ import { useApp } from "../../app/AppProvider";
 import { Drawer } from "../../components/ui/Drawer";
 import { ProgressLine } from "../../components/ui/ProgressLine";
 import { formatLongDuration, formatNumber } from "../../utils/format";
+import { AccountPanel } from "../auth/AccountPanel";
 import { calculatePlayerLevel, getAchievements } from "./progression";
 import type { AvatarStyle } from "./types";
 
@@ -38,10 +39,9 @@ export function ProfileDrawer() {
   return (
     <Drawer
       open={profileOpen}
-      title="Local profile"
-      description="Progress stays on this device and works without an account."
+      title="Profile"
+      description="Keep playing offline or sign in to sync between devices."
       closeLabel="Close profile"
-      size="compact"
       onClose={closeProfile}
     >
       <section className="profile-hero" data-avatar={profile.avatarStyle}>
@@ -54,6 +54,8 @@ export function ProfileDrawer() {
           <small>{formatNumber(profile.totalXp)} lifetime xp</small>
         </div>
       </section>
+
+      <AccountPanel />
 
       <section className="profile-level" aria-label="Level progress">
         <div>

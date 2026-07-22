@@ -1,0 +1,15 @@
+{
+  "name": "typely-api",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply typely-auth --local",
+    "db:migrate:remote": "wrangler d1 migrations apply typely-auth --remote"
+  },
+  "devDependencies": {
+    "wrangler": "4.70.0"
+  }
+}

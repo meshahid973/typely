@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "typely-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-20",
+  "vars": {
+    "ALLOWED_ORIGINS": "http://localhost:1420,http://tauri.localhost,https://tauri.localhost,tauri://localhost",
+    "SESSION_DAYS": "30"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "typely-auth",
+      "database_id": "31edc8d2-35f1-4528-8391-c360b9843598",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

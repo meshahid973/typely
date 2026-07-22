@@ -19,6 +19,7 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm check
       - run: pnpm build
+      - run: node --check cloudflare/typely-api/src/index.js
 
   rust:
     runs-on: ubuntu-latest
