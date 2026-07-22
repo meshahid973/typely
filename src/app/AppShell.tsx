@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
-import { PressFeedback } from "../../app/PressFeedback";
-import { Titlebar } from "./Titlebar";
+import { PressFeedback } from "../components/feedback/PressFeedback";
+import { Titlebar } from "../components/layout/Titlebar";
+import { SettingsDrawer } from "../features/settings/SettingsDrawer";
 
 export function AppShell({ children }: PropsWithChildren) {
   return (
@@ -8,6 +9,7 @@ export function AppShell({ children }: PropsWithChildren) {
       <PressFeedback />
       <Titlebar />
       <main className="app-content">{children}</main>
+      <SettingsDrawer />
     </div>
   );
 }

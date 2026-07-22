@@ -1,144 +1,96 @@
 import {
   type ChangeEvent,
   type ClipboardEvent,
-  type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
-  useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { useApp } from "../../app/AppContext";
+import { useApp } from "../../app/AppProvider";
 import { audioEngine } from "../../audio/audioEngine";
-import { cn } from "../../lib/cn";
-import type { TestStatus } from "./practice.types";
+import type {
+  CadenceMetrics,
+  TestConfiguration,
+  TestStatus,
+  TypingFeedback,
+  WordJudgement,
+} from "../../core/typing/types";
+import { cn } from "../../utils/cn";
 import { createTypingWords, TypingCharacter } from "./TypingCharacter";
+import { useCorrectionTracker } from "./useCorrectionTracker";
+import { useTypingCaret } from "./useTypingCaret";
+import { useTypingFeedbackEffects } from "./useTypingFeedbackEffects";
 
 interface TypingSurfaceProps {
   target: string;
   input: string;
   status: TestStatus;
-  onInput: (value: string) => void;
+  configuration: TestConfiguration;
+  cadence: CadenceMetrics;
+  feedback: TypingFeedback;
+  latestJudgement: WordJudgement | null;
+  onInput: (value: string) => TypingFeedback;
   onReset: () => void;
 }
 
-interface CaretPosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  visible: boolean;
+function judgementLabel(judgement: WordJudgement) {
+  return judgement.type;
 }
 
-const hiddenCaret: CaretPosition = {
-  x: 0,
-  y: 0,
-  width: 3,
-  height: 0,
-  visible: false,
-};
-
-export function TypingSurface({ target, input, status, onInput, onReset }: TypingSurfaceProps) {
+export function TypingSurface({
+  target,
+  input,
+  status,
+  configuration,
+  cadence,
+  feedback,
+  latestJudgement,
+  onInput,
+  onReset,
+}: TypingSurfaceProps) {
   const { settings } = useApp();
   const inputElement = useRef<HTMLTextAreaElement>(null);
   const copyElement = useRef<HTMLDivElement>(null);
   const activeCharacter = useRef<HTMLSpanElement>(null);
-  const lastScrollTop = useRef(0);
-  const previousInputLength = useRef(0);
+  const caretElement = useRef<HTMLSpanElement>(null);
   const [focused, setFocused] = useState(false);
-  const [caret, setCaret] = useState<CaretPosition>(hiddenCaret);
-  const [impact, setImpact] = useState(0);
   const words = useMemo(() => createTypingWords(target), [target]);
   const activeIndex = input.length;
+  const { correctedIndices, trackCorrections } = useCorrectionTracker(target, input);
+  const caret = useTypingCaret({
+    copyElement,
+    activeCharacter,
+    activeIndex,
+    targetLength: target.length,
+    caretStyle: settings.caretStyle,
+    reducedMotion: settings.reducedMotion,
+    status,
+  });
 
   useEffect(() => {
     inputElement.current?.focus();
   }, []);
 
-  useEffect(() => {
-    if (input.length > previousInputLength.current) {
-      setImpact((value) => value + 1);
-    }
-
-    previousInputLength.current = input.length;
-  }, [input.length]);
-
-  const measureCaret = useCallback(() => {
-    const copy = copyElement.current;
-    const active = activeCharacter.current;
-
-    if (!copy || !active || status === "complete" || activeIndex > target.length) {
-      setCaret(hiddenCaret);
-      return;
-    }
-
-    const characterHeight = active.offsetHeight;
-    const blockCaret = settings.caretStyle === "block";
-    const caretHeight = blockCaret ? characterHeight : Math.max(18, characterHeight * 0.82);
-    const caretWidth = blockCaret ? Math.max(10, active.offsetWidth) : 3;
-
-    setCaret({
-      x: active.offsetLeft - (blockCaret ? 1 : 2),
-      y: active.offsetTop + (characterHeight - caretHeight) / 2,
-      width: caretWidth,
-      height: caretHeight,
-      visible: true,
-    });
-
-    const desiredTop = Math.max(
-      0,
-      Math.min(
-        copy.scrollHeight - copy.clientHeight,
-        active.offsetTop - copy.clientHeight * 0.42 + characterHeight / 2,
-      ),
-    );
-
-    if (Math.abs(desiredTop - lastScrollTop.current) >= characterHeight * 0.65) {
-      lastScrollTop.current = desiredTop;
-      copy.scrollTo({
-        top: desiredTop,
-        behavior: settings.reducedMotion ? "auto" : "smooth",
-      });
-    }
-  }, [activeIndex, settings.caretStyle, settings.reducedMotion, status, target.length]);
-
-  useLayoutEffect(() => {
-    measureCaret();
-  }, [measureCaret]);
-
-  useEffect(() => {
-    const copy = copyElement.current;
-
-    if (!copy) {
-      return;
-    }
-
-    const observer = new ResizeObserver(measureCaret);
-    observer.observe(copy);
-
-    return () => observer.disconnect();
-  }, [measureCaret]);
-
-  const playInputSound = (nextValue: string) => {
-    if (nextValue.length <= input.length) {
-      return;
-    }
-
-    const index = input.length;
-    const typedCharacter = nextValue[index];
-    audioEngine.play(typedCharacter === target[index] ? "type" : "error");
-  };
+  const { visibleJudgement, playFeedback } = useTypingFeedbackEffects({
+    cadence,
+    caretElement,
+    feedback,
+    latestJudgement,
+    settings,
+  });
 
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const nextValue = event.target.value.replace(/[\r\n]/g, "");
-    playInputSound(nextValue);
-    onInput(nextValue);
+    trackCorrections(nextValue);
+    const nextFeedback = onInput(nextValue);
+    playFeedback(nextFeedback);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    audioEngine.prepare();
+
     if (event.key === "Tab") {
       event.preventDefault();
       onReset();
@@ -154,24 +106,54 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
 
     if (event.key === "Enter") {
       event.preventDefault();
+      return;
+    }
+
+    if (configuration.noBackspace && event.key === "Backspace") {
+      event.preventDefault();
+      return;
+    }
+
+    if (
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight" ||
+      event.key === "ArrowUp" ||
+      event.key === "ArrowDown" ||
+      event.key === "Home" ||
+      event.key === "End"
+    ) {
+      event.preventDefault();
     }
   };
 
-  const caretStyle = {
-    width: `${caret.width}px`,
-    height: `${caret.height}px`,
-    transform: `translate3d(${caret.x}px, ${caret.y}px, 0)`,
-  } as CSSProperties;
-  const impactStyle = {
-    left: `${caret.x}px`,
-    top: `${caret.y + caret.height + 3}px`,
-  } as CSSProperties;
+  const keepSelectionAtEnd = () => {
+    const element = inputElement.current;
+
+    if (!element || element.selectionStart === input.length) {
+      return;
+    }
+
+    element.setSelectionRange(input.length, input.length);
+  };
+
+  const showJudgement =
+    settings.judgementsEnabled &&
+    !settings.reducedMotion &&
+    visibleJudgement !== null &&
+    status !== "complete";
+  const showTrail =
+    settings.cadenceEffects &&
+    !settings.reducedMotion &&
+    cadence.speed > 0.42 &&
+    status === "running";
 
   return (
     <section
       className={cn("typing-surface", focused && "is-focused")}
       data-caret={settings.caretStyle}
       data-status={status}
+      data-hidden-mod={configuration.hidden}
+      data-impact={feedback.impact}
       aria-label="Typing area"
     >
       <textarea
@@ -186,15 +168,40 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
         disabled={status === "complete"}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onSelect={keepSelectionAtEnd}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onPaste={(event: ClipboardEvent<HTMLTextAreaElement>) => event.preventDefault()}
         onDrop={(event: DragEvent<HTMLTextAreaElement>) => event.preventDefault()}
       />
       <div ref={copyElement} className="typing-copy" aria-hidden="true">
-        <span className={cn("typing-caret", caret.visible && "is-visible")} style={caretStyle} />
-        {impact > 0 && caret.visible && (
-          <span key={impact} className="typing-impact" style={impactStyle} />
+        {showTrail && (
+          <span
+            className={cn(
+              "typing-caret-trail",
+              caret.visible && "is-visible",
+              caret.lineJump && "is-line-jump",
+            )}
+            style={caret.style}
+          />
+        )}
+        <span
+          ref={caretElement}
+          className={cn(
+            "typing-caret",
+            caret.visible && "is-visible",
+            caret.lineJump && "is-line-jump",
+          )}
+          style={caret.style}
+        />
+        {showJudgement && (
+          <span
+            key={visibleJudgement.id}
+            className={cn("word-judgement", `is-${visibleJudgement.type}`)}
+            style={caret.judgementStyle}
+          >
+            {judgementLabel(visibleJudgement)}
+          </span>
         )}
         {words.map((word) => (
           <span className="typing-word" key={word.id}>
@@ -207,6 +214,7 @@ export function TypingSurface({ target, input, status, onInput, onReset }: Typin
                   unit={unit}
                   typedCharacter={input[unit.index]}
                   active={active}
+                  corrected={correctedIndices.has(unit.index)}
                   elementRef={active ? activeCharacter : undefined}
                 />
               );

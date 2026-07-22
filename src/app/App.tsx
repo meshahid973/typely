@@ -1,10 +1,10 @@
-import { AppShell } from "../components/layout/AppShell";
-import { ScreenRouter } from "./ScreenRouter";
+import { AppRouter } from "./AppRouter";
+import { AppShell } from "./AppShell";
 
 export function App() {
   return (
     <AppShell>
-      <ScreenRouter />
+      <AppRouter />
     </AppShell>
   );
 }

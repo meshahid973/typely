@@ -4,5 +4,7 @@
 @import "./interactions.css";
 @import "./practice.css";
 @import "./results.css";
-@import "./screens.css";
+@import "./history.css";
+@import "./insights.css";
+@import "./overlays.css";
 @import "./motion.css";

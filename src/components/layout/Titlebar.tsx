@@ -17,7 +17,9 @@ export function Titlebar() {
   return (
     <header className="titlebar">
       <div className="titlebar-brand" data-tauri-drag-region>
-        <span className="titlebar-mark">t</span>
+        <span className="titlebar-mark" aria-hidden="true">
+          t
+        </span>
         <span>typely</span>
       </div>
       <div className="titlebar-drag-region" data-tauri-drag-region />
@@ -25,21 +27,21 @@ export function Titlebar() {
       <div className="titlebar-controls">
         <IconButton
           label="Minimize"
-          tone="dark"
+          tone="window"
           onClick={() => withAppWindow((appWindow) => appWindow.minimize())}
         >
           <Minus size={14} strokeWidth={2.1} />
         </IconButton>
         <IconButton
-          label="Maximize"
-          tone="dark"
+          label="Maximize or restore"
+          tone="window"
           onClick={() => withAppWindow((appWindow) => appWindow.toggleMaximize())}
         >
           <Square size={11} strokeWidth={2.1} />
         </IconButton>
         <IconButton
           label="Close"
-          tone="dark"
+          tone="window"
           className="titlebar-close"
           onClick={() => withAppWindow((appWindow) => appWindow.close())}
         >

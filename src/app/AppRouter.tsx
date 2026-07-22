@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { HistoryScreen } from "../features/history/HistoryScreen";
 import { InsightsScreen } from "../features/insights/InsightsScreen";
 import { PracticeScreen } from "../features/practice/PracticeScreen";
-import { SettingsScreen } from "../features/settings/SettingsScreen";
-import { useApp } from "./AppContext";
+import { useApp } from "./AppProvider";
 import type { AppView } from "./app.types";
 
 type TransitionPhase = "entering" | "idle" | "leaving";
@@ -13,7 +12,6 @@ const viewOrder: Record<AppView, number> = {
   practice: 0,
   history: 1,
   insights: 2,
-  settings: 3,
 };
 
 function renderView(view: AppView) {
@@ -25,14 +23,10 @@ function renderView(view: AppView) {
     return <InsightsScreen />;
   }
 
-  if (view === "settings") {
-    return <SettingsScreen />;
-  }
-
   return <PracticeScreen />;
 }
 
-export function ScreenRouter() {
+export function AppRouter() {
   const { view, settings } = useApp();
   const [displayedView, setDisplayedView] = useState(view);
   const [phase, setPhase] = useState<TransitionPhase>("entering");
@@ -60,11 +54,10 @@ export function ScreenRouter() {
     const timeout = window.setTimeout(() => {
       setDisplayedView(view);
       setPhase("entering");
-
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => setPhase("idle"));
       });
-    }, 125);
+    }, 150);
 
     return () => window.clearTimeout(timeout);
   }, [displayedView, settings.reducedMotion, view]);

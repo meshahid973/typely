@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { cn } from "../../lib/cn";
+import { useAnimatedNumber } from "../../hooks/useAnimatedNumber";
+import { cn } from "../../utils/cn";
 
 interface AnimatedValueProps {
   value: ReactNode;
@@ -8,11 +9,12 @@ interface AnimatedValueProps {
 }
 
 export function AnimatedValue({ value, as: Component = "span", className }: AnimatedValueProps) {
+  const animatable = typeof value === "number" || typeof value === "string";
+  const displayedValue = useAnimatedNumber(animatable ? value : "");
+
   return (
     <Component className={cn("animated-value", className)}>
-      <span className="animated-value-content" key={String(value)}>
-        {value}
-      </span>
+      <span className="animated-value-content">{animatable ? displayedValue : value}</span>
     </Component>
   );
 }

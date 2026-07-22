@@ -1,6 +1,14 @@
-import type { TestMode } from "../features/practice/practice.types";
+import type { SoundPackId } from "../audio/audioManifest";
+import type { Grade } from "../core/scoring/types";
+import type {
+  PerformanceSample,
+  TestConfiguration,
+  TestMode,
+  TypingEvent,
+  WordJudgement,
+} from "../core/typing/types";
 
-export type AppView = "practice" | "history" | "insights" | "settings";
+export type AppView = "practice" | "history" | "insights";
 export type AppTheme = "cream" | "night";
 export type AppAccent = "pink" | "lime" | "lavender" | "sky";
 export type CaretStyle = "bar" | "block";
@@ -12,7 +20,11 @@ export interface AppSettings {
   liveStats: boolean;
   caretStyle: CaretStyle;
   soundEnabled: boolean;
-  soundVolume: number;
+  soundPack: SoundPackId;
+  interfaceVolume: number;
+  typingVolume: number;
+  judgementsEnabled: boolean;
+  cadenceEffects: boolean;
 }
 
 export interface TestResult {
@@ -24,12 +36,23 @@ export interface TestResult {
   wpm: number;
   rawWpm: number;
   accuracy: number;
+  consistency: number;
   correctCharacters: number;
   incorrectCharacters: number;
   totalCharacters: number;
-  correctKeystrokes?: number;
-  incorrectKeystrokes?: number;
+  correctKeystrokes: number;
+  incorrectKeystrokes: number;
   maxCombo: number;
+  score: number;
+  grade: Grade;
+  xpEarned: number;
+  personalBest: boolean;
+  modifierMultiplier: number;
+  configuration: TestConfiguration;
+  wordJudgements: WordJudgement[];
+  performanceSamples: PerformanceSample[];
+  typingEvents: TypingEvent[];
+  target: string;
   punctuation: boolean;
   numbers: boolean;
 }

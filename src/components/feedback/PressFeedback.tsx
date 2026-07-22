@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { audioEngine } from "../audio/audioEngine";
+import { audioEngine } from "../../audio/audioEngine";
 
-const releaseDuration = 460;
+const releaseDuration = 520;
 
 function getButton(target: EventTarget | null) {
   if (!(target instanceof Element)) {
@@ -34,6 +34,8 @@ export function PressFeedback() {
     };
 
     const press = (button: HTMLButtonElement) => {
+      audioEngine.prepare();
+
       if (activeButton && activeButton !== button) {
         activeButton.classList.remove("is-pressing");
       }
@@ -53,7 +55,7 @@ export function PressFeedback() {
       activeButton = null;
       button.classList.remove("is-pressing");
       button.classList.remove("is-releasing");
-      button.getBoundingClientRect();
+      void button.offsetWidth;
       button.classList.add("is-releasing");
 
       const timer = window.setTimeout(() => {
@@ -68,7 +70,7 @@ export function PressFeedback() {
       const button = getButton(event.target);
 
       if (button && enteredButton(event, button) && button.dataset.sound !== "none") {
-        audioEngine.play("hover");
+        audioEngine.play("menu-hover");
       }
     };
 
@@ -88,7 +90,7 @@ export function PressFeedback() {
       const button = getButton(event.target);
 
       if (button && button.dataset.sound !== "none") {
-        audioEngine.play("click");
+        audioEngine.play("menu-select");
       }
     };
 

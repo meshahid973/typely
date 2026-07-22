@@ -1,0 +1,158 @@
+import type { TargetPosition, TypingEvent, TypingSessionStats } from "./types";
+
+export const emptyTypingSessionStats: TypingSessionStats = {
+  correctKeystrokes: 0,
+  incorrectKeystrokes: 0,
+  totalKeystrokes: 0,
+  backspaces: 0,
+  currentCombo: 0,
+  maxCombo: 0,
+};
+
+function commonPrefixLength(previousInput: string, nextInput: string) {
+  const limit = Math.min(previousInput.length, nextInput.length);
+  let index = 0;
+
+  while (index < limit && previousInput[index] === nextInput[index]) {
+    index += 1;
+  }
+
+  return index;
+}
+
+export function createTargetPositions(target: string) {
+  const positions: TargetPosition[] = [];
+  let wordIndex = 0;
+  let characterIndex = 0;
+
+  for (let index = 0; index < target.length; index += 1) {
+    const expectedCharacter = target[index];
+
+    positions.push({
+      index,
+      wordIndex,
+      characterIndex,
+      expectedCharacter,
+    });
+
+    if (expectedCharacter === " ") {
+      wordIndex += 1;
+      characterIndex = 0;
+    } else {
+      characterIndex += 1;
+    }
+  }
+
+  return positions;
+}
+
+interface CreateTypingEventsOptions {
+  previousInput: string;
+  nextInput: string;
+  target: string;
+  targetPositions: TargetPosition[];
+  timestamp: number;
+  sequenceStart: number;
+}
+
+export function createTypingEvents({
+  previousInput,
+  nextInput,
+  target,
+  targetPositions,
+  timestamp,
+  sequenceStart,
+}: CreateTypingEventsOptions) {
+  const events: TypingEvent[] = [];
+  const sharedLength = commonPrefixLength(previousInput, nextInput);
+  let sequence = sequenceStart;
+
+  for (let index = previousInput.length - 1; index >= sharedLength; index -= 1) {
+    const position = targetPositions[index];
+
+    events.push({
+      id: `event-${sequence}`,
+      timestamp,
+      type: "backspace",
+      expectedCharacter: position?.expectedCharacter ?? null,
+      enteredCharacter: previousInput[index] ?? null,
+      targetIndex: index,
+      wordIndex: position?.wordIndex ?? 0,
+      characterIndex: position?.characterIndex ?? 0,
+      correct: previousInput[index] === target[index],
+    });
+    sequence += 1;
+  }
+
+  for (let index = sharedLength; index < nextInput.length; index += 1) {
+    const enteredCharacter = nextInput[index];
+    const position = targetPositions[index];
+
+    events.push({
+      id: `event-${sequence}`,
+      timestamp,
+      type: enteredCharacter === " " ? "space" : "character",
+      expectedCharacter: position?.expectedCharacter ?? null,
+      enteredCharacter,
+      targetIndex: index,
+      wordIndex: position?.wordIndex ?? 0,
+      characterIndex: position?.characterIndex ?? 0,
+      correct: enteredCharacter === target[index],
+    });
+    sequence += 1;
+  }
+
+  return events;
+}
+
+export function applyTypingEvents(current: TypingSessionStats, events: TypingEvent[]) {
+  const next = { ...current };
+  let comboMilestone: number | null = null;
+  let comboBreak: number | null = null;
+
+  for (const event of events) {
+    if (event.type === "restart") {
+      return {
+        stats: { ...emptyTypingSessionStats },
+        comboMilestone,
+        comboBreak,
+      };
+    }
+
+    if (event.type === "backspace") {
+      next.backspaces += 1;
+      continue;
+    }
+
+    next.totalKeystrokes += 1;
+
+    if (event.correct) {
+      next.correctKeystrokes += 1;
+      next.currentCombo += 1;
+      next.maxCombo = Math.max(next.maxCombo, next.currentCombo);
+
+      if (
+        next.currentCombo === 25 ||
+        next.currentCombo === 50 ||
+        next.currentCombo === 100 ||
+        (next.currentCombo > 100 && next.currentCombo % 100 === 0)
+      ) {
+        comboMilestone = next.currentCombo;
+      }
+    } else {
+      next.incorrectKeystrokes += 1;
+
+      if (next.currentCombo >= 10) {
+        comboBreak = next.currentCombo;
+      }
+
+      next.currentCombo = 0;
+    }
+  }
+
+  return { stats: next, comboMilestone, comboBreak };
+}
+
+export function summarizeTypingEvents(events: TypingEvent[]) {
+  return applyTypingEvents(emptyTypingSessionStats, events).stats;
+}
