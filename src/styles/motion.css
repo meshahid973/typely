@@ -1,15 +1,130 @@
-@keyframes view-in {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
+@keyframes press-release {
+  0% {
+    scale: 0.925;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  48% {
+    scale: 1.045;
+  }
+  72% {
+    scale: 0.988;
+  }
+  100% {
+    scale: 1;
   }
 }
 
-@keyframes fade-in {
+@keyframes press-flash {
+  0% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes value-in {
+  from {
+    opacity: 0;
+    transform: translateY(32%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes selection-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  68% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes refresh-turn {
+  from {
+    transform: rotate(0deg) scale(0.88);
+  }
+  72% {
+    transform: rotate(390deg) scale(1.05);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes words-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.997);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes character-hit {
+  0% {
+    transform: translateY(1px) scale(0.94);
+    text-shadow: 0 0 0 transparent;
+  }
+  52% {
+    transform: translateY(-1px) scale(1.055);
+    text-shadow: 0 0 10px var(--accent-glow);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    text-shadow: 0 0 0 transparent;
+  }
+}
+
+@keyframes character-error {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  28% {
+    transform: translateX(-2px) scale(1.04);
+  }
+  58% {
+    transform: translateX(2px) scale(1.02);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translate(50%, 5px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(50%, 0) scale(1);
+  }
+}
+
+@keyframes overlay-in {
   from {
     opacity: 0;
   }
@@ -21,7 +136,11 @@
 @keyframes result-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.985);
+    transform: translateY(16px) scale(0.965);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.006);
   }
   to {
     opacity: 1;
@@ -29,10 +148,21 @@
   }
 }
 
-@keyframes row-in {
+@keyframes result-line {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: scaleX(0.1);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -40,52 +170,109 @@
   }
 }
 
-@keyframes caret-pulse {
-  0%,
-  45% {
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
     opacity: 1;
+    transform: translateY(0);
   }
-  46%,
+}
+
+@keyframes insight-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes settings-in {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes empty-float {
+  0%,
   100% {
-    opacity: 0.2;
+    transform: translateY(0);
   }
-}
-
-.button,
-.icon-button,
-.navigation-link,
-.mode-button,
-.mode-value,
-.choice-card,
-.accent-choice,
-.setting-row,
-.switch,
-.switch > span {
-  transition:
-    color 130ms ease,
-    background-color 130ms ease,
-    border-color 130ms ease,
-    box-shadow 130ms ease,
-    opacity 130ms ease,
-    transform 130ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-:root[data-motion="reduced"] *,
-:root[data-motion="reduced"] *::before,
-:root[data-motion="reduced"] *::after {
-  scroll-behavior: auto !important;
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+  button.is-releasing,
+  button.is-releasing::after,
+  .animated-value-content,
+  .mode-button.is-active,
+  .mode-value.is-active,
+  .mode-icon.is-active,
+  .refresh-button .is-spinning,
+  .typing-surface,
+  .typing-character.is-correct,
+  .typing-character.is-incorrect,
+  .typing-caret::after,
+  .typing-message,
+  .result-overlay,
+  .result-card,
+  .result-card::before,
+  .result-details > div,
+  .result-actions,
+  .history-row,
+  .insight-card,
+  .settings-card,
+  .choice-card.is-selected,
+  .empty-state > svg {
+    animation: none;
   }
+
+  .result-details > div,
+  .result-actions {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:root[data-motion="reduced"] button.is-releasing,
+:root[data-motion="reduced"] button.is-releasing::after,
+:root[data-motion="reduced"] .animated-value-content,
+:root[data-motion="reduced"] .mode-button.is-active,
+:root[data-motion="reduced"] .mode-value.is-active,
+:root[data-motion="reduced"] .mode-icon.is-active,
+:root[data-motion="reduced"] .refresh-button .is-spinning,
+:root[data-motion="reduced"] .typing-surface,
+:root[data-motion="reduced"] .typing-character.is-correct,
+:root[data-motion="reduced"] .typing-character.is-incorrect,
+:root[data-motion="reduced"] .typing-caret::after,
+:root[data-motion="reduced"] .typing-message,
+:root[data-motion="reduced"] .result-overlay,
+:root[data-motion="reduced"] .result-card,
+:root[data-motion="reduced"] .result-card::before,
+:root[data-motion="reduced"] .result-details > div,
+:root[data-motion="reduced"] .result-actions,
+:root[data-motion="reduced"] .history-row,
+:root[data-motion="reduced"] .insight-card,
+:root[data-motion="reduced"] .settings-card,
+:root[data-motion="reduced"] .choice-card.is-selected,
+:root[data-motion="reduced"] .empty-state > svg {
+  animation: none;
+}
+
+:root[data-motion="reduced"] .result-details > div,
+:root[data-motion="reduced"] .result-actions {
+  opacity: 1;
+  transform: none;
 }

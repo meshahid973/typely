@@ -11,6 +11,14 @@ function readStoredValue<T>(key: string, fallback: T) {
   }
 }
 
+function writeStoredValue<T>(key: string, value: T) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    return;
+  }
+}
+
 export function useLocalStorage<T>(key: string, fallback: T) {
   const [value, setValue] = useState<T>(() => readStoredValue(key, fallback));
 
@@ -18,7 +26,7 @@ export function useLocalStorage<T>(key: string, fallback: T) {
     (next: StateUpdater<T>) => {
       setValue((current) => {
         const resolved = typeof next === "function" ? (next as (value: T) => T)(current) : next;
-        window.localStorage.setItem(key, JSON.stringify(resolved));
+        writeStoredValue(key, resolved);
         return resolved;
       });
     },

@@ -1,6 +1,7 @@
 import {
   createContext,
   type PropsWithChildren,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -32,8 +33,12 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: PropsWithChildren) {
   const [view, setView] = useState<AppView>("practice");
-  const [settings, setSettings] = useLocalStorage<AppSettings>("typely.settings", defaultSettings);
+  const [storedSettings, setStoredSettings] = useLocalStorage<Partial<AppSettings>>(
+    "typely.settings",
+    defaultSettings,
+  );
   const [results, setResults] = useLocalStorage<TestResult[]>("typely.results", []);
+  const settings = useMemo(() => ({ ...defaultSettings, ...storedSettings }), [storedSettings]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -42,18 +47,41 @@ export function AppProvider({ children }: PropsWithChildren) {
     root.dataset.motion = settings.reducedMotion ? "reduced" : "full";
   }, [settings]);
 
+  const updateSettings = useCallback(
+    (patch: Partial<AppSettings>) => {
+      setStoredSettings((current) => ({ ...defaultSettings, ...current, ...patch }));
+    },
+    [setStoredSettings],
+  );
+
+  const addResult = useCallback(
+    (result: TestResult) => {
+      setResults((current) => [result, ...current].slice(0, 250));
+    },
+    [setResults],
+  );
+
+  const removeResult = useCallback(
+    (id: string) => {
+      setResults((current) => current.filter((result) => result.id !== id));
+    },
+    [setResults],
+  );
+
+  const clearResults = useCallback(() => setResults([]), [setResults]);
+
   const value = useMemo<AppContextValue>(
     () => ({
       view,
       settings,
       results,
       setView,
-      updateSettings: (patch) => setSettings((current) => ({ ...current, ...patch })),
-      addResult: (result) => setResults((current) => [result, ...current].slice(0, 250)),
-      removeResult: (id) => setResults((current) => current.filter((result) => result.id !== id)),
-      clearResults: () => setResults([]),
+      updateSettings,
+      addResult,
+      removeResult,
+      clearResults,
     }),
-    [results, setResults, setSettings, settings, view],
+    [addResult, clearResults, removeResult, results, settings, updateSettings, view],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

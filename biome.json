@@ -1,7 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
   "files": {
-    "includes": ["**", "!dist", "!src-tauri/target"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!dist",
+      "!.typely-backups",
+      "!src-tauri/target",
+      "!src-tauri/gen"
+    ]
   },
   "formatter": {
     "enabled": true,

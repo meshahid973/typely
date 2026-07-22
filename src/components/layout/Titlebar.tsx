@@ -20,11 +20,7 @@ export function Titlebar() {
         <span className="titlebar-mark">t</span>
         <span>typely</span>
       </div>
-      <div
-        className="titlebar-drag-region"
-        data-tauri-drag-region
-        onDoubleClick={() => withAppWindow((appWindow) => appWindow.toggleMaximize())}
-      />
+      <div className="titlebar-drag-region" data-tauri-drag-region />
       <AppNavigation />
       <div className="titlebar-controls">
         <IconButton
@@ -32,14 +28,14 @@ export function Titlebar() {
           tone="dark"
           onClick={() => withAppWindow((appWindow) => appWindow.minimize())}
         >
-          <Minus size={15} strokeWidth={2.1} />
+          <Minus size={14} strokeWidth={2.1} />
         </IconButton>
         <IconButton
           label="Maximize"
           tone="dark"
           onClick={() => withAppWindow((appWindow) => appWindow.toggleMaximize())}
         >
-          <Square size={12} strokeWidth={2.1} />
+          <Square size={11} strokeWidth={2.1} />
         </IconButton>
         <IconButton
           label="Close"
@@ -47,7 +43,7 @@ export function Titlebar() {
           className="titlebar-close"
           onClick={() => withAppWindow((appWindow) => appWindow.close())}
         >
-          <X size={15} strokeWidth={2.1} />
+          <X size={14} strokeWidth={2.1} />
         </IconButton>
       </div>
     </header>

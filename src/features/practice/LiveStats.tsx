@@ -1,3 +1,6 @@
+import type { CSSProperties } from "react";
+import { AnimatedValue } from "../../components/ui/AnimatedValue";
+import { cn } from "../../lib/cn";
 import type { TestConfiguration, TestMetrics, TestStatus } from "./practice.types";
 
 interface LiveStatsProps {
@@ -22,31 +25,33 @@ export function LiveStats({
       ? Math.max(0, configuration.value - Math.floor(elapsedMs / 1000))
       : `${Math.round(progress * 100)}%`;
   const primaryLabel = configuration.mode === "time" ? "seconds" : "progress";
-
-  const statusLabel = status === "complete" ? "complete" : status;
+  const progressStyle = {
+    transform: `scaleX(${Math.max(0, Math.min(1, progress))})`,
+  } as CSSProperties;
 
   return (
-    <div className="live-stats" aria-label="Live test statistics">
-      <div className="live-stat live-stat-main">
-        <strong>{primaryValue}</strong>
-        <span>{primaryLabel}</span>
+    <section className="live-area" data-status={status} aria-label="Live test statistics">
+      <div className="live-stats">
+        <div className="live-stat live-stat-main">
+          <AnimatedValue as="strong" value={primaryValue} />
+          <span>{primaryLabel}</span>
+        </div>
+        <div className="live-stat">
+          <AnimatedValue as="strong" value={showLiveStats ? metrics.wpm : "—"} />
+          <span>wpm</span>
+        </div>
+        <div className="live-stat">
+          <AnimatedValue as="strong" value={showLiveStats ? `${metrics.accuracy}%` : "—"} />
+          <span>accuracy</span>
+        </div>
+        <div className={cn("combo-counter", metrics.currentCombo > 4 && "is-visible")}>
+          <AnimatedValue as="strong" value={`×${metrics.currentCombo}`} />
+          <span>combo</span>
+        </div>
       </div>
-      <div className="live-stat">
-        <strong>{showLiveStats ? metrics.wpm : "—"}</strong>
-        <span>wpm</span>
+      <div className="test-progress" aria-hidden="true">
+        <span style={progressStyle} />
       </div>
-      <div className="live-stat">
-        <strong>{showLiveStats ? `${metrics.accuracy}%` : "—"}</strong>
-        <span>accuracy</span>
-      </div>
-      <div className="live-stat">
-        <strong>{metrics.currentCombo}</strong>
-        <span>combo</span>
-      </div>
-      <div className="test-status" data-status={status}>
-        <span />
-        {statusLabel}
-      </div>
-    </div>
+    </section>
   );
 }

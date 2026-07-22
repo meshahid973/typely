@@ -1,4 +1,8 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./base.css";
+@import "./interactions.css";
+@import "./practice.css";
+@import "./results.css";
+@import "./screens.css";
 @import "./motion.css";

@@ -1,0 +1,187 @@
+button {
+  --press-x: 50%;
+  --press-y: 50%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 0;
+  cursor: pointer;
+  scale: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button::before,
+button::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+button::before {
+  background: currentColor;
+  transition: opacity var(--motion-slow) var(--ease-out-quint);
+}
+
+button::after {
+  background: radial-gradient(
+    circle at var(--press-x) var(--press-y),
+    color-mix(in srgb, currentColor 34%, transparent) 0,
+    transparent 68%
+  );
+  transform: scale(0.5);
+}
+
+button > * {
+  position: relative;
+  z-index: 1;
+}
+
+button:hover:not(:disabled)::before {
+  opacity: 0.075;
+  transition-duration: var(--motion-instant);
+}
+
+button.is-pressing:not(:disabled) {
+  scale: 0.925;
+  transition: scale 70ms var(--ease-out-quint);
+}
+
+button.is-pressing:not(:disabled)::after {
+  opacity: 0.22;
+  transform: scale(1);
+  transition:
+    opacity 45ms ease,
+    transform 90ms var(--ease-out-quint);
+}
+
+button.is-releasing:not(:disabled) {
+  animation: press-release 520ms var(--ease-out-expo) both;
+}
+
+button.is-releasing:not(:disabled)::after {
+  animation: press-flash 520ms var(--ease-out-quint) both;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-slow) var(--ease-out-quint),
+    box-shadow var(--motion-slow) var(--ease-out-quint),
+    transform var(--motion-medium) var(--ease-out-expo);
+}
+
+.button-medium {
+  min-height: 38px;
+  padding: 0 15px;
+}
+
+.button-small {
+  min-height: 31px;
+  padding: 0 10px;
+}
+
+.button-primary {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.button-secondary {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.button-primary:hover:not(:disabled) {
+  box-shadow: 0 10px 25px color-mix(in srgb, var(--text) 16%, transparent);
+}
+
+.button-secondary:hover:not(:disabled),
+.button-ghost:hover:not(:disabled) {
+  background: var(--control-hover);
+  color: var(--text);
+}
+
+.icon-button {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-soft);
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-slow) var(--ease-out-quint),
+    transform var(--motion-medium) var(--ease-out-expo);
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--control-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.icon-button-dark {
+  width: 31px;
+  height: 31px;
+}
+
+.titlebar-close:hover:not(:disabled) {
+  background: #d84f63;
+  color: white;
+}
+
+.navigation-link {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-slow) var(--ease-out-quint),
+    transform var(--motion-medium) var(--ease-out-expo);
+}
+
+.navigation-link:hover:not(:disabled) {
+  background: var(--control-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.mode-button,
+.mode-value,
+.mode-icon,
+.choice-card,
+.accent-choice,
+.setting-row {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-slow) var(--ease-out-quint),
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-slow) var(--ease-out-quint),
+    opacity var(--motion-fast) ease,
+    transform var(--motion-medium) var(--ease-out-expo);
+}

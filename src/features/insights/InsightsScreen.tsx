@@ -1,6 +1,7 @@
 import { BarChart3 } from "lucide-react";
 import { useMemo } from "react";
 import { useApp } from "../../app/AppContext";
+import { AnimatedValue } from "../../components/ui/AnimatedValue";
 import { Button } from "../../components/ui/Button";
 
 export function InsightsScreen() {
@@ -39,27 +40,27 @@ export function InsightsScreen() {
         <div className="insight-grid">
           <article className="insight-card insight-card-main">
             <span>best speed</span>
-            <strong>{summary.bestWpm}</strong>
+            <AnimatedValue as="strong" value={summary.bestWpm} />
             <small>wpm</small>
           </article>
           <article className="insight-card">
             <span>average speed</span>
-            <strong>{summary.averageWpm}</strong>
+            <AnimatedValue as="strong" value={summary.averageWpm} />
             <small>wpm</small>
           </article>
           <article className="insight-card">
             <span>average accuracy</span>
-            <strong>{summary.averageAccuracy}%</strong>
+            <AnimatedValue as="strong" value={`${summary.averageAccuracy}%`} />
             <small>all tests</small>
           </article>
           <article className="insight-card">
             <span>best combo</span>
-            <strong>{summary.bestCombo}</strong>
+            <AnimatedValue as="strong" value={summary.bestCombo} />
             <small>correct keys</small>
           </article>
           <article className="insight-card">
             <span>completed</span>
-            <strong>{summary.total}</strong>
+            <AnimatedValue as="strong" value={summary.total} />
             <small>tests</small>
           </article>
         </div>

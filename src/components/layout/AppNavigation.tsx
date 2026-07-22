@@ -17,7 +17,7 @@ const navigation: NavigationItem[] = [
 ];
 
 export function AppNavigation() {
-  const { view, setView, results } = useApp();
+  const { view, setView } = useApp();
 
   return (
     <nav className="app-navigation" aria-label="Main navigation">
@@ -31,14 +31,14 @@ export function AppNavigation() {
             key={item.view}
             className={cn("navigation-link", active && "is-active")}
             aria-current={active ? "page" : undefined}
+            aria-label={item.label}
             title={item.label}
             onClick={() => setView(item.view)}
           >
-            <Icon size={17} strokeWidth={2} />
+            <span className="navigation-icon">
+              <Icon size={16} strokeWidth={2} />
+            </span>
             <span>{item.label}</span>
-            {item.view === "history" && results.length > 0 && (
-              <small>{Math.min(results.length, 99)}</small>
-            )}
           </button>
         );
       })}

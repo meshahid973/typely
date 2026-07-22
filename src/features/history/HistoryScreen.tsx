@@ -1,11 +1,35 @@
 import { Clock3, Keyboard, Trash2 } from "lucide-react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useApp } from "../../app/AppContext";
 import { Button } from "../../components/ui/Button";
 import { IconButton } from "../../components/ui/IconButton";
+import { cn } from "../../lib/cn";
 import { formatDate, formatDuration } from "../../lib/format";
 
 export function HistoryScreen() {
   const { results, removeResult, clearResults, setView } = useApp();
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const removeTimeout = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (removeTimeout.current !== null) {
+        window.clearTimeout(removeTimeout.current);
+      }
+    };
+  }, []);
+
+  const handleRemove = (id: string) => {
+    if (removingId !== null) {
+      return;
+    }
+
+    setRemovingId(id);
+    removeTimeout.current = window.setTimeout(() => {
+      removeResult(id);
+      setRemovingId(null);
+    }, 180);
+  };
 
   return (
     <div className="view">
@@ -40,9 +64,9 @@ export function HistoryScreen() {
           </div>
           {results.map((result, index) => (
             <article
-              className="history-row"
+              className={cn("history-row", removingId === result.id && "is-removing")}
               key={result.id}
-              style={{ "--index": index } as React.CSSProperties}
+              style={{ "--index": index } as CSSProperties}
             >
               <div className="history-main">
                 <strong>{result.wpm}</strong>
@@ -65,7 +89,11 @@ export function HistoryScreen() {
                   <small>{formatDuration(result.durationMs)}</small>
                 </div>
               </div>
-              <IconButton label="Delete result" onClick={() => removeResult(result.id)}>
+              <IconButton
+                label="Delete result"
+                disabled={removingId !== null}
+                onClick={() => handleRemove(result.id)}
+              >
                 <Trash2 size={15} />
               </IconButton>
             </article>

@@ -1,7 +1,8 @@
 import { RefreshCw } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "../../app/AppContext";
 import { IconButton } from "../../components/ui/IconButton";
+import { cn } from "../../lib/cn";
 import { LiveStats } from "./LiveStats";
 import { ModePicker } from "./ModePicker";
 import type { TestConfiguration } from "./practice.types";
@@ -19,22 +20,43 @@ const initialConfiguration: TestConfiguration = {
 export function PracticeScreen() {
   const { settings, addResult, setView } = useApp();
   const [configuration, setConfiguration] = useState(initialConfiguration);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshTimeout = useRef<number | null>(null);
   const handleComplete = useCallback(
     (result: Parameters<typeof addResult>[0]) => addResult(result),
     [addResult],
   );
   const test = useTypingTest({ configuration, onComplete: handleComplete });
-  const locked = test.status === "running" || test.status === "paused";
+  const active = test.status === "running" || test.status === "paused";
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimeout.current !== null) {
+        window.clearTimeout(refreshTimeout.current);
+      }
+    };
+  }, []);
+
+  const resetTest = () => {
+    test.reset();
+    setRefreshing(true);
+
+    if (refreshTimeout.current !== null) {
+      window.clearTimeout(refreshTimeout.current);
+    }
+
+    refreshTimeout.current = window.setTimeout(() => setRefreshing(false), 460);
+  };
 
   return (
-    <div className="view view-practice">
+    <div className="view view-practice" data-status={test.status}>
       <div className="practice-toolbar">
-        <ModePicker configuration={configuration} disabled={locked} onChange={setConfiguration} />
-        <IconButton label="New words" onClick={test.reset}>
-          <RefreshCw size={17} />
+        <ModePicker configuration={configuration} disabled={active} onChange={setConfiguration} />
+        <IconButton label="New words" className="refresh-button" onClick={resetTest}>
+          <RefreshCw className={cn(refreshing && "is-spinning")} size={16} />
         </IconButton>
       </div>
-      <section className="typing-stage">
+      <section className="typing-stage" aria-label="Typing test">
         <LiveStats
           configuration={configuration}
           metrics={test.metrics}
@@ -44,26 +66,25 @@ export function PracticeScreen() {
           showLiveStats={settings.liveStats}
         />
         <TypingSurface
+          key={test.target}
           target={test.target}
           input={test.input}
           status={test.status}
           onInput={test.updateInput}
-          onReset={test.reset}
+          onReset={resetTest}
         />
-        <div className="typing-hints">
+        <div className="typing-hints" data-hidden={active}>
           <span>
             <kbd>tab</kbd> restart
           </span>
           <span>
-            <kbd>esc</kbd> clear
+            <kbd>esc</kbd> reset
           </span>
-          <span>{configuration.punctuation ? "punctuation on" : "punctuation off"}</span>
-          <span>{configuration.numbers ? "numbers on" : "numbers off"}</span>
         </div>
         {test.lastResult && (
           <ResultOverlay
             result={test.lastResult}
-            onRestart={test.reset}
+            onRestart={resetTest}
             onHistory={() => setView("history")}
           />
         )}

@@ -3,6 +3,8 @@ dist
 .vscode
 .idea
 *.log
+*.zip
 .DS_Store
+.typely-backups
 src-tauri/target
 src-tauri/gen

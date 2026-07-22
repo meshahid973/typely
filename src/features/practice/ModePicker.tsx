@@ -19,60 +19,67 @@ export function ModePicker({ configuration, disabled, onChange }: ModePickerProp
   const values = configuration.mode === "time" ? timeValues : wordValues;
 
   return (
-    <div className="mode-picker">
+    <div className="mode-picker" data-disabled={disabled}>
       <div className="mode-group">
         <button
           type="button"
           className={cn("mode-button", configuration.mode === "time" && "is-active")}
+          aria-pressed={configuration.mode === "time"}
           disabled={disabled}
           onClick={() => setMode("time")}
         >
           <Timer size={14} />
-          time
+          <span>time</span>
         </button>
         <button
           type="button"
           className={cn("mode-button", configuration.mode === "words" && "is-active")}
+          aria-pressed={configuration.mode === "words"}
           disabled={disabled}
           onClick={() => setMode("words")}
         >
           <Hash size={14} />
-          words
+          <span>words</span>
         </button>
       </div>
-      <span className="mode-divider" />
+      <span className="mode-divider" aria-hidden="true" />
       <div className="mode-group">
         {values.map((value) => (
           <button
             type="button"
             key={value}
             className={cn("mode-value", configuration.value === value && "is-active")}
+            aria-pressed={configuration.value === value}
             disabled={disabled}
             onClick={() => onChange({ ...configuration, value })}
           >
-            {value}
+            <span>{value}</span>
           </button>
         ))}
       </div>
-      <span className="mode-divider" />
-      <div className="mode-group">
+      <span className="mode-divider" aria-hidden="true" />
+      <div className="mode-group mode-group-modifiers">
         <button
           type="button"
-          className={cn("mode-button", configuration.punctuation && "is-active")}
+          className={cn("mode-icon", configuration.punctuation && "is-active")}
+          aria-label="Toggle punctuation"
+          aria-pressed={configuration.punctuation}
+          title="Punctuation"
           disabled={disabled}
           onClick={() => onChange({ ...configuration, punctuation: !configuration.punctuation })}
         >
           <AtSign size={14} />
-          punctuation
         </button>
         <button
           type="button"
-          className={cn("mode-button", configuration.numbers && "is-active")}
+          className={cn("mode-icon", configuration.numbers && "is-active")}
+          aria-label="Toggle numbers"
+          aria-pressed={configuration.numbers}
+          title="Numbers"
           disabled={disabled}
           onClick={() => onChange({ ...configuration, numbers: !configuration.numbers })}
         >
           <Hash size={14} />
-          numbers
         </button>
       </div>
     </div>
