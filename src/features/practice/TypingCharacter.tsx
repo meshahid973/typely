@@ -1,4 +1,4 @@
-import { memo, type Ref } from "react";
+import { memo } from "react";
 import { cn } from "../../utils/cn";
 
 export interface CharacterUnit {
@@ -17,7 +17,6 @@ interface TypingCharacterProps {
   typedCharacter: string | undefined;
   active: boolean;
   corrected: boolean;
-  elementRef?: Ref<HTMLSpanElement>;
 }
 
 export function createTypingWords(target: string) {
@@ -58,7 +57,6 @@ export const TypingCharacter = memo(function TypingCharacter({
   typedCharacter,
   active,
   corrected,
-  elementRef,
 }: TypingCharacterProps) {
   const typed = typedCharacter !== undefined;
   const correct = typed && typedCharacter === unit.value;
@@ -69,14 +67,18 @@ export const TypingCharacter = memo(function TypingCharacter({
     state = "active";
   } else if (incorrect) {
     state = "incorrect";
-  } else if (corrected) {
+  } else if (correct && corrected) {
     state = "corrected";
   } else if (correct) {
     state = "correct";
   }
 
   return (
-    <span ref={elementRef} className={cn("typing-character", `is-${state}`)} data-state={state}>
+    <span
+      className={cn("typing-character", `is-${state}`)}
+      data-state={state}
+      data-typing-index={unit.index}
+    >
       {unit.value}
     </span>
   );

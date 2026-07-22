@@ -1,4 +1,12 @@
-import { AtSign, CaseUpper, Delete, EyeOff, Hash, SlidersHorizontal } from "lucide-react";
+import {
+  AtSign,
+  CaseUpper,
+  Delete,
+  EyeOff,
+  Hash,
+  type LucideIcon,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { GameButton } from "../../components/ui/GameButton";
 import { Popover } from "../../components/ui/Popover";
@@ -12,17 +20,62 @@ interface ModifiersPopoverProps {
   onChange: (configuration: TestConfiguration) => void;
 }
 
-const modifierCount = (configuration: TestConfiguration) =>
-  Number(configuration.punctuation) +
-  Number(configuration.numbers) +
-  Number(configuration.capitals) +
-  Number(configuration.noBackspace) +
-  Number(configuration.hidden);
+type ModifierKey = "punctuation" | "numbers" | "capitals" | "noBackspace" | "hidden";
+
+interface ModifierOption {
+  key: ModifierKey;
+  label: string;
+  description: string;
+  multiplier: string;
+  icon: LucideIcon;
+}
+
+const modifierOptions: ModifierOption[] = [
+  {
+    key: "punctuation",
+    label: "Punctuation",
+    description: "Adds punctuation marks.",
+    multiplier: "1.08×",
+    icon: AtSign,
+  },
+  {
+    key: "numbers",
+    label: "Numbers",
+    description: "Mixes number groups into the text.",
+    multiplier: "1.05×",
+    icon: Hash,
+  },
+  {
+    key: "capitals",
+    label: "Capitals",
+    description: "Adds regular uppercase words.",
+    multiplier: "1.04×",
+    icon: CaseUpper,
+  },
+  {
+    key: "noBackspace",
+    label: "No backspace",
+    description: "Disables correction during the run.",
+    multiplier: "1.15×",
+    icon: Delete,
+  },
+  {
+    key: "hidden",
+    label: "Hidden",
+    description: "Completed characters fade after a short delay.",
+    multiplier: "1.20×",
+    icon: EyeOff,
+  },
+];
+
+function countSelectedModifiers(configuration: TestConfiguration) {
+  return modifierOptions.reduce((total, option) => total + Number(configuration[option.key]), 0);
+}
 
 export function ModifiersPopover({ configuration, disabled, onChange }: ModifiersPopoverProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const selectedCount = modifierCount(configuration);
+  const selectedCount = countSelectedModifiers(configuration);
   const multiplier = calculateModifierMultiplier(configuration);
   const headingId = "modifiers-heading";
 
@@ -31,6 +84,10 @@ export function ModifiersPopover({ configuration, disabled, onChange }: Modifier
       setOpen(false);
     }
   }, [disabled]);
+
+  const changeModifier = (key: ModifierKey, enabled: boolean) => {
+    onChange({ ...configuration, [key]: enabled });
+  };
 
   return (
     <div className="modifiers-anchor" ref={anchorRef}>
@@ -62,71 +119,25 @@ export function ModifiersPopover({ configuration, disabled, onChange }: Modifier
           <strong>{multiplier.toFixed(2)}×</strong>
         </header>
         <div className="modifier-list">
-          <div className="modifier-row">
-            <span className="modifier-icon" aria-hidden="true">
-              <AtSign size={15} />
-            </span>
-            <Toggle
-              id="modifier-punctuation"
-              label="Punctuation"
-              description="Adds punctuation marks."
-              checked={configuration.punctuation}
-              onChange={(punctuation) => onChange({ ...configuration, punctuation })}
-            />
-            <span className="modifier-multiplier">1.08×</span>
-          </div>
-          <div className="modifier-row">
-            <span className="modifier-icon" aria-hidden="true">
-              <Hash size={15} />
-            </span>
-            <Toggle
-              id="modifier-numbers"
-              label="Numbers"
-              description="Mixes number groups into the text."
-              checked={configuration.numbers}
-              onChange={(numbers) => onChange({ ...configuration, numbers })}
-            />
-            <span className="modifier-multiplier">1.05×</span>
-          </div>
-          <div className="modifier-row">
-            <span className="modifier-icon" aria-hidden="true">
-              <CaseUpper size={15} />
-            </span>
-            <Toggle
-              id="modifier-capitals"
-              label="Capitals"
-              description="Adds regular uppercase words."
-              checked={configuration.capitals}
-              onChange={(capitals) => onChange({ ...configuration, capitals })}
-            />
-            <span className="modifier-multiplier">1.04×</span>
-          </div>
-          <div className="modifier-row">
-            <span className="modifier-icon" aria-hidden="true">
-              <Delete size={15} />
-            </span>
-            <Toggle
-              id="modifier-no-backspace"
-              label="No backspace"
-              description="Disables correction during the run."
-              checked={configuration.noBackspace}
-              onChange={(noBackspace) => onChange({ ...configuration, noBackspace })}
-            />
-            <span className="modifier-multiplier">1.15×</span>
-          </div>
-          <div className="modifier-row">
-            <span className="modifier-icon" aria-hidden="true">
-              <EyeOff size={15} />
-            </span>
-            <Toggle
-              id="modifier-hidden"
-              label="Hidden"
-              description="Completed characters fade after a short delay."
-              checked={configuration.hidden}
-              onChange={(hidden) => onChange({ ...configuration, hidden })}
-            />
-            <span className="modifier-multiplier">1.20×</span>
-          </div>
+          {modifierOptions.map((option) => {
+            const Icon = option.icon;
+
+            return (
+              <div className="modifier-row" key={option.key}>
+                <span className="modifier-icon" aria-hidden="true">
+                  <Icon size={15} />
+                </span>
+                <Toggle
+                  id={`modifier-${option.key}`}
+                  label={option.label}
+                  description={option.description}
+                  checked={configuration[option.key]}
+                  onChange={(enabled) => changeModifier(option.key, enabled)}
+                />
+                <span className="modifier-multiplier">{option.multiplier}</span>
+              </div>
+            );
+          })}
         </div>
       </Popover>
     </div>

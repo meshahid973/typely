@@ -1,4 +1,5 @@
 import type { AudioEffect, SoundPackId } from "./audioManifest";
+import { createSoundTones, type SoundTone } from "./soundTones";
 
 interface AudioConfiguration {
   enabled: boolean;
@@ -10,17 +11,6 @@ interface AudioConfiguration {
 interface PlayOptions {
   pitch?: number;
   variant?: number;
-}
-
-interface Tone {
-  frequency: number;
-  endFrequency?: number;
-  duration: number;
-  delay?: number;
-  gain: number;
-  type?: OscillatorType;
-  filterFrequency?: number;
-  noise?: number;
 }
 
 const defaultConfiguration: AudioConfiguration = {
@@ -40,13 +30,13 @@ function effectChannel(effect: AudioEffect) {
 
 class AudioEngine {
   private context: AudioContext | null = null;
-  private master: GainNode | null = null;
+  private masterGain: GainNode | null = null;
   private interfaceGain: GainNode | null = null;
   private typingGain: GainNode | null = null;
   private noiseBuffer: AudioBuffer | null = null;
   private configuration = defaultConfiguration;
   private lastHoverAt = 0;
-  private correctStep = 0;
+  private correctVariant = 0;
 
   configure(configuration: AudioConfiguration) {
     this.configuration = {
@@ -60,12 +50,16 @@ class AudioEngine {
     }
 
     const now = this.context.currentTime;
-    this.master?.gain.setTargetAtTime(configuration.enabled ? 1 : 0, now, 0.02);
+    this.masterGain?.gain.setTargetAtTime(this.canPlay() ? 1 : 0, now, 0.02);
     this.interfaceGain?.gain.setTargetAtTime(this.configuration.interfaceVolume, now, 0.02);
     this.typingGain?.gain.setTargetAtTime(this.configuration.typingVolume, now, 0.02);
   }
 
   prepare() {
+    if (!this.canPlay()) {
+      return;
+    }
+
     const context = this.getContext();
 
     if (context?.state === "suspended") {
@@ -74,16 +68,14 @@ class AudioEngine {
   }
 
   play(effect: AudioEffect, options: PlayOptions = {}) {
-    const { enabled, pack } = this.configuration;
-
-    if (!enabled || pack === "silent") {
+    if (!this.canPlay()) {
       return;
     }
 
     if (effect === "menu-hover") {
       const now = performance.now();
 
-      if (now - this.lastHoverAt < 80) {
+      if (now - this.lastHoverAt < 90) {
         return;
       }
 
@@ -100,12 +92,16 @@ class AudioEngine {
       void context.resume();
     }
 
-    const variant = options.variant ?? this.correctStep++;
+    const variant = options.variant ?? (effect === "typing-correct" ? this.correctVariant++ : 0);
     const pitch = Math.max(0.94, Math.min(1.08, options.pitch ?? 1));
 
-    for (const tone of this.createTones(pack, effect, variant)) {
+    for (const tone of createSoundTones(this.configuration.pack, effect, variant)) {
       this.playTone(context, tone, effectChannel(effect), pitch);
     }
+  }
+
+  private canPlay() {
+    return this.configuration.enabled && this.configuration.pack !== "silent";
   }
 
   private getContext() {
@@ -115,19 +111,19 @@ class AudioEngine {
 
     try {
       const context = new AudioContext({ latencyHint: "interactive" });
-      const master = context.createGain();
+      const masterGain = context.createGain();
       const interfaceGain = context.createGain();
       const typingGain = context.createGain();
 
-      master.gain.value = this.configuration.enabled ? 1 : 0;
+      masterGain.gain.value = this.canPlay() ? 1 : 0;
       interfaceGain.gain.value = this.configuration.interfaceVolume;
       typingGain.gain.value = this.configuration.typingVolume;
-      interfaceGain.connect(master);
-      typingGain.connect(master);
-      master.connect(context.destination);
+      interfaceGain.connect(masterGain);
+      typingGain.connect(masterGain);
+      masterGain.connect(context.destination);
 
       this.context = context;
-      this.master = master;
+      this.masterGain = masterGain;
       this.interfaceGain = interfaceGain;
       this.typingGain = typingGain;
       return context;
@@ -136,143 +132,9 @@ class AudioEngine {
     }
   }
 
-  private createTones(pack: SoundPackId, effect: AudioEffect, variant: number): Tone[] {
-    const packGain = pack === "muted" ? 0.38 : 1;
-    const variantOffset = [0, 18, -12][variant % 3];
-
-    if (effect === "typing-error") {
-      return [
-        {
-          frequency: pack === "digital" ? 238 : 188,
-          endFrequency: pack === "digital" ? 196 : 154,
-          duration: 0.055,
-          gain: 0.024 * packGain,
-          type: "sine",
-          filterFrequency: 680,
-          noise: pack === "typewriter" ? 0.018 : 0,
-        },
-      ];
-    }
-
-    if (effect === "typing-correct") {
-      if (pack === "soft-mechanical" || pack === "typewriter") {
-        return [
-          {
-            frequency: 248 + variantOffset,
-            endFrequency: 218 + variantOffset,
-            duration: 0.025,
-            gain: 0.022 * packGain,
-            type: "triangle",
-            filterFrequency: 1150,
-            noise: pack === "typewriter" ? 0.025 : 0.012,
-          },
-        ];
-      }
-
-      if (pack === "digital") {
-        return [
-          {
-            frequency: 520 + variantOffset,
-            endFrequency: 468 + variantOffset,
-            duration: 0.022,
-            gain: 0.014 * packGain,
-            type: "sine",
-            filterFrequency: 1900,
-          },
-        ];
-      }
-
-      return [
-        {
-          frequency: 432 + variantOffset,
-          endFrequency: 390 + variantOffset,
-          duration: 0.025,
-          gain: 0.018 * packGain,
-          type: "triangle",
-          filterFrequency: 1550,
-        },
-      ];
-    }
-
-    if (effect === "word-complete") {
-      return [
-        {
-          frequency: 530,
-          endFrequency: 594,
-          duration: 0.045,
-          gain: 0.012 * packGain,
-          type: "sine",
-          filterFrequency: 1800,
-        },
-      ];
-    }
-
-    if (effect === "menu-hover") {
-      return [
-        {
-          frequency: 680,
-          endFrequency: 748,
-          duration: 0.025,
-          gain: 0.008 * packGain,
-          type: "sine",
-          filterFrequency: 1800,
-        },
-      ];
-    }
-
-    if (effect === "menu-select" || effect === "test-start") {
-      return [
-        {
-          frequency: effect === "test-start" ? 360 : 310,
-          endFrequency: effect === "test-start" ? 510 : 455,
-          duration: 0.06,
-          gain: 0.023 * packGain,
-          type: "triangle",
-          filterFrequency: 1600,
-          noise: pack === "soft-mechanical" ? 0.008 : 0,
-        },
-      ];
-    }
-
-    if (effect === "combo-milestone") {
-      return [
-        {
-          frequency: 540,
-          endFrequency: 610,
-          duration: 0.09,
-          gain: 0.019 * packGain,
-          type: "sine",
-          filterFrequency: 2100,
-        },
-        {
-          frequency: 680,
-          endFrequency: 760,
-          duration: 0.11,
-          delay: 0.045,
-          gain: 0.015 * packGain,
-          type: "sine",
-          filterFrequency: 2300,
-        },
-      ];
-    }
-
-    const personalBest = effect === "personal-best";
-    const frequencies = personalBest ? [440, 554, 659, 880] : [392, 494, 587];
-
-    return frequencies.map((frequency, index) => ({
-      frequency,
-      endFrequency: frequency * 1.06,
-      duration: personalBest ? 0.17 : 0.14,
-      delay: index * (personalBest ? 0.055 : 0.05),
-      gain: (personalBest ? 0.019 : 0.016) * packGain,
-      type: "sine",
-      filterFrequency: 2200,
-    }));
-  }
-
   private playTone(
     context: AudioContext,
-    tone: Tone,
+    tone: SoundTone,
     channel: "interface" | "typing",
     pitch: number,
   ) {
@@ -285,8 +147,8 @@ class AudioEngine {
     const start = context.currentTime + (tone.delay ?? 0);
     const end = start + tone.duration;
     const oscillator = context.createOscillator();
-    const gain = context.createGain();
     const filter = context.createBiquadFilter();
+    const gain = context.createGain();
 
     oscillator.type = tone.type ?? "sine";
     oscillator.frequency.setValueAtTime(tone.frequency * pitch, start);
@@ -312,20 +174,7 @@ class AudioEngine {
     filter.connect(gain);
     gain.connect(output);
 
-    let noise: AudioBufferSourceNode | null = null;
-    let noiseGain: GainNode | null = null;
-
-    if (tone.noise && tone.noise > 0) {
-      noise = context.createBufferSource();
-      noiseGain = context.createGain();
-      noise.buffer = this.getNoiseBuffer(context);
-      noiseGain.gain.setValueAtTime(tone.noise, start);
-      noiseGain.gain.exponentialRampToValueAtTime(0.0001, end);
-      noise.connect(noiseGain);
-      noiseGain.connect(filter);
-      noise.start(start);
-      noise.stop(end);
-    }
+    const noiseNodes = this.playNoise(context, tone, filter, start, end);
 
     oscillator.addEventListener(
       "ended",
@@ -333,14 +182,37 @@ class AudioEngine {
         oscillator.disconnect();
         filter.disconnect();
         gain.disconnect();
-        noise?.disconnect();
-        noiseGain?.disconnect();
+        noiseNodes?.source.disconnect();
+        noiseNodes?.gain.disconnect();
       },
       { once: true },
     );
 
     oscillator.start(start);
     oscillator.stop(end + 0.01);
+  }
+
+  private playNoise(
+    context: AudioContext,
+    tone: SoundTone,
+    filter: BiquadFilterNode,
+    start: number,
+    end: number,
+  ) {
+    if (!tone.noise || tone.noise <= 0) {
+      return null;
+    }
+
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    source.buffer = this.getNoiseBuffer(context);
+    gain.gain.setValueAtTime(tone.noise, start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    source.connect(gain);
+    gain.connect(filter);
+    source.start(start);
+    source.stop(end);
+    return { source, gain };
   }
 
   private getNoiseBuffer(context: AudioContext) {

@@ -19,7 +19,6 @@ interface CaretPosition {
 
 interface UseTypingCaretOptions {
   copyElement: RefObject<HTMLDivElement | null>;
-  activeCharacter: RefObject<HTMLSpanElement | null>;
   activeIndex: number;
   targetLength: number;
   caretStyle: CaretStyle;
@@ -45,7 +44,6 @@ function easeOutQuint(value: number) {
 
 export function useTypingCaret({
   copyElement,
-  activeCharacter,
   activeIndex,
   targetLength,
   caretStyle,
@@ -55,6 +53,8 @@ export function useTypingCaret({
   const scrollFrame = useRef<number | null>(null);
   const lineJumpFrame = useRef<number | null>(null);
   const lastLineTop = useRef(-1);
+  const lastActiveIndex = useRef(0);
+  const lastForwardScrollTarget = useRef(0);
   const measureRef = useRef<() => void>(() => undefined);
   const [caret, setCaret] = useState<CaretPosition>(hiddenCaret);
   const [lineJump, setLineJump] = useState(false);
@@ -69,22 +69,27 @@ export function useTypingCaret({
   const scrollTo = useCallback(
     (element: HTMLDivElement, targetTop: number) => {
       stopScroll();
+      const clampedTarget = clamp(
+        targetTop,
+        0,
+        Math.max(0, element.scrollHeight - element.clientHeight),
+      );
 
       if (reducedMotion) {
-        element.scrollTop = targetTop;
+        element.scrollTop = clampedTarget;
         return;
       }
 
       const startTop = element.scrollTop;
-      const distance = targetTop - startTop;
+      const distance = clampedTarget - startTop;
 
-      if (Math.abs(distance) < 1) {
-        element.scrollTop = targetTop;
+      if (Math.abs(distance) < 0.75) {
+        element.scrollTop = clampedTarget;
         return;
       }
 
       const startedAt = performance.now();
-      const duration = 280;
+      const duration = 260;
 
       const update = (now: number) => {
         const progress = Math.min(1, (now - startedAt) / duration);
@@ -93,6 +98,7 @@ export function useTypingCaret({
         if (progress < 1) {
           scrollFrame.current = window.requestAnimationFrame(update);
         } else {
+          element.scrollTop = clampedTarget;
           scrollFrame.current = null;
         }
       };
@@ -118,10 +124,15 @@ export function useTypingCaret({
 
   const measureCaret = useCallback(() => {
     const copy = copyElement.current;
-    const active = activeCharacter.current;
 
-    if (!copy || !active || status === "complete" || activeIndex > targetLength) {
-      setCaret(hiddenCaret);
+    if (!copy || status === "complete" || activeIndex > targetLength) {
+      setCaret((current) => ({ ...current, visible: false }));
+      return;
+    }
+
+    const active = copy.querySelector<HTMLSpanElement>(`[data-typing-index="${activeIndex}"]`);
+
+    if (!active) {
       return;
     }
 
@@ -130,6 +141,7 @@ export function useTypingCaret({
     const caretHeight = blockCaret ? characterHeight : Math.max(18, characterHeight * 0.82);
     const caretWidth = blockCaret ? Math.max(10, active.offsetWidth) : 3;
     const activeTop = active.offsetTop;
+    const movingForward = activeIndex >= lastActiveIndex.current;
     const changedLine =
       lastLineTop.current >= 0 &&
       Math.abs(activeTop - lastLineTop.current) > characterHeight * 0.55;
@@ -147,32 +159,31 @@ export function useTypingCaret({
     });
 
     const activeBottom = activeTop + characterHeight;
-    const safeTop = copy.scrollTop + characterHeight * 0.3;
-    const safeBottom = copy.scrollTop + copy.clientHeight - characterHeight * 1.45;
+    const safeTop = copy.scrollTop + characterHeight * 0.35;
+    const safeBottom = copy.scrollTop + copy.clientHeight - characterHeight * 1.35;
+    const outsideViewport = activeTop < safeTop || activeBottom > safeBottom;
 
-    if (!changedLine && lastLineTop.current >= 0) {
-      return;
+    if (changedLine && outsideViewport) {
+      const desiredTop = activeTop - copy.clientHeight * 0.36;
+      const forwardTarget = movingForward
+        ? Math.max(copy.scrollTop, lastForwardScrollTarget.current, desiredTop)
+        : desiredTop;
+
+      if (movingForward) {
+        lastForwardScrollTarget.current = forwardTarget;
+      }
+
+      scrollTo(copy, forwardTarget);
+    }
+
+    if (!movingForward && activeTop < safeTop) {
+      scrollTo(copy, activeTop - characterHeight * 0.5);
+      lastForwardScrollTarget.current = copy.scrollTop;
     }
 
     lastLineTop.current = activeTop;
-
-    if (activeTop >= safeTop && activeBottom <= safeBottom) {
-      return;
-    }
-
-    const maximumTop = Math.max(0, copy.scrollHeight - copy.clientHeight);
-    const desiredTop = clamp(activeTop - copy.clientHeight * 0.38, 0, maximumTop);
-    scrollTo(copy, desiredTop);
-  }, [
-    activeCharacter,
-    activeIndex,
-    caretStyle,
-    copyElement,
-    markLineJump,
-    scrollTo,
-    status,
-    targetLength,
-  ]);
+    lastActiveIndex.current = activeIndex;
+  }, [activeIndex, caretStyle, copyElement, markLineJump, scrollTo, status, targetLength]);
 
   useLayoutEffect(() => {
     const copy = copyElement.current;
@@ -181,6 +192,8 @@ export function useTypingCaret({
       stopScroll();
       copy.scrollTop = 0;
       lastLineTop.current = -1;
+      lastActiveIndex.current = 0;
+      lastForwardScrollTarget.current = 0;
     }
 
     measureRef.current = measureCaret;

@@ -9,6 +9,7 @@ import type {
   TypingFeedback,
 } from "../../core/typing/types";
 import { cn } from "../../utils/cn";
+import { shouldReduceMotion } from "../../utils/motion";
 
 interface LiveStatsProps {
   configuration: TestConfiguration;
@@ -67,11 +68,13 @@ export function LiveStats({
   useEffect(() => {
     const element = comboRef.current;
 
-    if (!element || (!feedback.comboMilestone && !feedback.comboRecord)) {
+    if (!element || shouldReduceMotion() || (!feedback.comboMilestone && !feedback.comboRecord)) {
       return;
     }
 
-    element.getAnimations().forEach((animation) => animation.cancel());
+    element.getAnimations().forEach((animation) => {
+      animation.cancel();
+    });
     element.animate(
       [
         { transform: "translateY(0) scale(1)" },
@@ -83,7 +86,7 @@ export function LiveStats({
         easing: "cubic-bezier(0.16, 1.24, 0.3, 1)",
       },
     );
-  }, [feedback.comboMilestone, feedback.comboRecord, feedback.sequence]);
+  }, [feedback.comboMilestone, feedback.comboRecord]);
 
   return (
     <section

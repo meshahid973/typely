@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppSettings, TestResult } from "../../app/app.types";
 import { KeyHint } from "../../components/ui/KeyHint";
 import type { TestConfiguration } from "../../core/typing/types";
+import { shouldReduceMotion } from "../../utils/motion";
 import { LiveStats } from "./LiveStats";
 import { PracticeToolbar } from "./PracticeToolbar";
 import { ResultStage } from "./ResultStage";
@@ -11,7 +12,7 @@ import { useTypingTest } from "./useTypingTest";
 interface TypingGameStageProps {
   configuration: TestConfiguration;
   settings: AppSettings;
-  settingsOpen: boolean;
+  overlayOpen: boolean;
   previousBestWpm: number;
   previousBestCombo: number;
   onConfigurationChange: (configuration: TestConfiguration) => void;
@@ -22,7 +23,7 @@ interface TypingGameStageProps {
 export function TypingGameStage({
   configuration,
   settings,
-  settingsOpen,
+  overlayOpen,
   previousBestWpm,
   previousBestCombo,
   onConfigurationChange,
@@ -55,10 +56,10 @@ export function TypingGameStage({
   }, []);
 
   useEffect(() => {
-    if (settingsOpen) {
+    if (overlayOpen) {
       test.pause();
     }
-  }, [settingsOpen, test.pause]);
+  }, [overlayOpen, test.pause]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -72,7 +73,7 @@ export function TypingGameStage({
     }
 
     cadenceFrame.current = window.requestAnimationFrame(() => {
-      const enabled = settings.cadenceEffects && !settings.reducedMotion;
+      const enabled = settings.cadenceEffects && !settings.reducedMotion && !shouldReduceMotion();
       stage.style.setProperty("--cadence-energy", enabled ? test.cadence.energy.toFixed(3) : "0");
       stage.style.setProperty("--cadence-speed", enabled ? test.cadence.speed.toFixed(3) : "0");
       stage.style.setProperty(
@@ -130,7 +131,7 @@ export function TypingGameStage({
             configuration={configuration}
             cadence={test.cadence}
             feedback={test.feedback}
-            latestJudgement={test.feedback.wordJudgement}
+            correctedIndices={test.correctedIndices}
             onInput={test.updateInput}
             onReset={resetTest}
           />
@@ -141,7 +142,12 @@ export function TypingGameStage({
         </div>
 
         {test.lastResult && (
-          <ResultStage result={test.lastResult} onRestart={resetTest} onHistory={onHistory} />
+          <ResultStage
+            key={test.lastResult.id}
+            result={test.lastResult}
+            onRestart={resetTest}
+            onHistory={onHistory}
+          />
         )}
       </div>
     </div>

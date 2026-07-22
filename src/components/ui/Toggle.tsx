@@ -7,6 +7,7 @@ interface ToggleProps {
   checked: boolean;
   disabled?: boolean;
   onChange: (checked: boolean) => void;
+  compact?: boolean;
 }
 
 export function Toggle({
@@ -16,9 +17,10 @@ export function Toggle({
   checked,
   disabled = false,
   onChange,
+  compact = false,
 }: ToggleProps) {
   return (
-    <label className="toggle-row" htmlFor={id} data-disabled={disabled}>
+    <label className="toggle-row" htmlFor={id} data-disabled={disabled} data-compact={compact}>
       <span className="toggle-copy">
         <strong>{label}</strong>
         {description && <small>{description}</small>}

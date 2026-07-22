@@ -7,6 +7,7 @@ import type {
   TypingEvent,
   WordJudgement,
 } from "../core/typing/types";
+import type { PlayerProfile } from "../features/progression/types";
 
 export type AppView = "practice" | "history" | "insights";
 export type AppTheme = "cream" | "night";
@@ -25,6 +26,7 @@ export interface AppSettings {
   typingVolume: number;
   judgementsEnabled: boolean;
   cadenceEffects: boolean;
+  highContrast: boolean;
 }
 
 export interface TestResult {
@@ -53,6 +55,6 @@ export interface TestResult {
   performanceSamples: PerformanceSample[];
   typingEvents: TypingEvent[];
   target: string;
-  punctuation: boolean;
-  numbers: boolean;
 }
+
+export type { PlayerProfile };

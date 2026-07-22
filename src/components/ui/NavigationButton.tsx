@@ -3,10 +3,12 @@ import { cn } from "../../utils/cn";
 
 interface NavigationButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
+  current?: boolean;
 }
 
 export function NavigationButton({
   active = false,
+  current = active,
   children,
   className,
   type = "button",
@@ -16,7 +18,7 @@ export function NavigationButton({
     <button
       type={type}
       className={cn("navigation-button", active && "is-active", className)}
-      aria-current={active ? "page" : undefined}
+      aria-current={current ? "page" : undefined}
       {...props}
     >
       <span className="navigation-button-marker" aria-hidden="true" />

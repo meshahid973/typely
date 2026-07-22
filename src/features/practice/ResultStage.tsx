@@ -1,13 +1,16 @@
-import { ArrowRight, ChevronDown, RotateCcw } from "lucide-react";
+import { ArrowRight, ChevronDown, Play, RotateCcw, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useApp } from "../../app/AppProvider";
 import type { TestResult } from "../../app/app.types";
 import { audioEngine } from "../../audio/audioEngine";
 import { AnimatedValue } from "../../components/ui/AnimatedValue";
 import { GameButton } from "../../components/ui/GameButton";
+import { IconButton } from "../../components/ui/IconButton";
 import { KeyHint } from "../../components/ui/KeyHint";
 import { countJudgements } from "../../core/scoring/calculateScore";
 import { formatDuration } from "../../utils/format";
+import { shouldReduceMotion } from "../../utils/motion";
+import { ReplayPlayer } from "../replay/ReplayPlayer";
 import { ResultTimeline } from "./ResultTimeline";
 
 interface ResultStageProps {
@@ -23,6 +26,7 @@ function formatAccuracy(value: number) {
 export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) {
   const { settings } = useApp();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [replayOpen, setReplayOpen] = useState(false);
   const judgementCounts = countJudgements(result.wordJudgements ?? []);
 
   useEffect(() => {
@@ -31,11 +35,11 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
     if (result.personalBest) {
       const timeout = window.setTimeout(
         () => audioEngine.play("personal-best"),
-        settings.reducedMotion ? 0 : 430,
+        settings.reducedMotion || shouldReduceMotion() ? 0 : 430,
       );
       return () => window.clearTimeout(timeout);
     }
-  }, [result.id, result.personalBest, settings.reducedMotion]);
+  }, [result.personalBest, settings.reducedMotion]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,7 +55,9 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
       if (event.key === "Escape") {
         event.preventDefault();
 
-        if (detailsOpen) {
+        if (replayOpen) {
+          setReplayOpen(false);
+        } else if (detailsOpen) {
           setDetailsOpen(false);
         } else {
           onRestart();
@@ -65,6 +71,12 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
         return;
       }
 
+      if (event.key.toLowerCase() === "r" && !interactiveTarget) {
+        event.preventDefault();
+        setReplayOpen(true);
+        return;
+      }
+
       if (event.key.toLowerCase() === "h" && !interactiveTarget) {
         event.preventDefault();
         onHistory();
@@ -73,7 +85,7 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [detailsOpen, onHistory, onRestart]);
+  }, [detailsOpen, onHistory, onRestart, replayOpen]);
 
   return (
     <section
@@ -83,7 +95,7 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
       aria-labelledby="result-heading"
       aria-live="polite"
     >
-      <div className="result-grade" aria-label={`Grade ${result.grade}`}>
+      <div className="result-grade" role="img" aria-label={`Grade ${result.grade}`}>
         <span>{result.grade}</span>
         <small>grade</small>
       </div>
@@ -166,12 +178,17 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
         <footer className="result-stage-footer">
           <div className="result-stage-shortcuts">
             <KeyHint shortcut="tab" label="restart" />
+            <KeyHint shortcut="r" label="replay" />
             <KeyHint shortcut="h" label="history" />
           </div>
           <div className="result-stage-actions">
             <GameButton onClick={onRestart}>
               <RotateCcw size={15} />
               restart
+            </GameButton>
+            <GameButton variant="secondary" onClick={() => setReplayOpen(true)}>
+              <Play size={15} />
+              replay
             </GameButton>
             <GameButton
               variant="secondary"
@@ -187,6 +204,25 @@ export function ResultStage({ result, onRestart, onHistory }: ResultStageProps) 
             </GameButton>
           </div>
         </footer>
+      </div>
+      <div
+        className="result-replay-layer"
+        data-open={replayOpen}
+        aria-hidden={!replayOpen}
+        inert={!replayOpen}
+      >
+        <div className="result-replay-panel">
+          <header>
+            <div>
+              <span>result replay</span>
+              <strong>Watch the run exactly as it happened.</strong>
+            </div>
+            <IconButton label="Close replay" onClick={() => setReplayOpen(false)}>
+              <X size={16} />
+            </IconButton>
+          </header>
+          <ReplayPlayer key={result.id} result={result} />
+        </div>
       </div>
     </section>
   );

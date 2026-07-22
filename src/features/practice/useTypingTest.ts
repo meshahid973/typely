@@ -19,18 +19,16 @@ import type {
 import { createTarget } from "../../core/typing/typingEngine";
 import {
   applyTypingEvents,
+  createRestartEvent,
   createTargetPositions,
   createTypingEvents,
   emptyTypingSessionStats,
+  getCorrectedIndices,
+  getTypingImpact,
 } from "../../core/typing/typingEvents";
 import { collectNewJudgements, finalizeLastWordJudgement } from "../../core/typing/wordJudgements";
-import {
-  createRestartEvent,
-  createTestResult,
-  emptyCadence,
-  emptyFeedback,
-  impactFromEvents,
-} from "./typingTestHelpers";
+import { createTestResult } from "./createTestResult";
+import { emptyCadence, emptyFeedback } from "./testDefaults";
 import { useActiveTimer } from "./useActiveTimer";
 
 interface UseTypingTestOptions {
@@ -52,10 +50,10 @@ export function useTypingTest({
   const [elapsedMs, setElapsedMs] = useState(0);
   const [stats, setStats] = useState<TypingSessionStats>(emptyTypingSessionStats);
   const [events, setEvents] = useState<TypingEvent[]>([]);
-  const [judgements, setJudgements] = useState<WordJudgement[]>([]);
   const [cadence, setCadence] = useState<CadenceMetrics>(emptyCadence);
   const [feedback, setFeedback] = useState<TypingFeedback>(emptyFeedback);
   const [lastResult, setLastResult] = useState<TestResult | null>(null);
+
   const {
     reset: resetTimer,
     start: startTimer,
@@ -64,6 +62,7 @@ export function useTypingTest({
     getElapsed,
   } = useActiveTimer();
   const inputRef = useRef("");
+  const statusRef = useRef<TestStatus>("ready");
   const statsRef = useRef<TypingSessionStats>(emptyTypingSessionStats);
   const eventsRef = useRef<TypingEvent[]>([]);
   const judgementsRef = useRef<WordJudgement[]>([]);
@@ -72,51 +71,47 @@ export function useTypingTest({
   const lastSampleAtRef = useRef(0);
   const eventSequenceRef = useRef(1);
   const feedbackSequenceRef = useRef(0);
-  const statusRef = useRef<TestStatus>("ready");
   const targetRef = useRef(target);
   const targetPositionsRef = useRef(createTargetPositions(target));
 
-  const setCurrentStatus = useCallback((next: TestStatus) => {
-    statusRef.current = next;
-    setStatus(next);
+  const changeStatus = useCallback((nextStatus: TestStatus) => {
+    statusRef.current = nextStatus;
+    setStatus(nextStatus);
   }, []);
 
-  const finish = useCallback(
-    (finalInput: string, finalElapsed: number) => {
+  const finishTest = useCallback(
+    (finalInput: string, finalElapsedMs: number) => {
       if (statusRef.current === "complete") {
         return;
       }
 
-      const timestamp = finalElapsed;
-      const finalJudgement = finalizeLastWordJudgement(
+      const lastJudgement = finalizeLastWordJudgement(
         judgedWordsRef.current,
         finalInput,
         targetRef.current,
         eventsRef.current,
-        timestamp,
+        finalElapsedMs,
       );
-      const finalJudgements = finalJudgement
-        ? [...judgementsRef.current, finalJudgement]
+      const finalJudgements = lastJudgement
+        ? [...judgementsRef.current, lastJudgement]
         : judgementsRef.current;
 
-      if (finalJudgement) {
-        judgedWordsRef.current.add(finalJudgement.wordIndex);
+      if (lastJudgement) {
+        judgedWordsRef.current.add(lastJudgement.wordIndex);
         judgementsRef.current = finalJudgements;
-        setJudgements(finalJudgements);
       }
 
       const metrics = calculateMetrics(
         finalInput,
         targetRef.current,
-        finalElapsed,
+        finalElapsedMs,
         eventsRef.current,
         statsRef.current,
       );
       const result = createTestResult({
         configuration,
-        elapsedMs: finalElapsed,
+        elapsedMs: finalElapsedMs,
         events: eventsRef.current,
-        input: finalInput,
         judgements: finalJudgements,
         metrics,
         previousBestWpm,
@@ -125,43 +120,42 @@ export function useTypingTest({
       });
 
       samplesRef.current = result.performanceSamples;
-      setElapsedMs(finalElapsed);
-      setCurrentStatus("complete");
+      setElapsedMs(finalElapsedMs);
+      changeStatus("complete");
       setLastResult(result);
       onComplete(result);
     },
-    [configuration, onComplete, previousBestWpm, setCurrentStatus],
+    [changeStatus, configuration, onComplete, previousBestWpm],
   );
 
   const reset = useCallback(() => {
     const nextTarget = createTarget(configuration);
-    const now = performance.now();
-    const initialEvents = [createRestartEvent(now)];
+    const restartEvent = createRestartEvent(performance.now());
 
     inputRef.current = "";
+    statusRef.current = "ready";
     statsRef.current = { ...emptyTypingSessionStats };
-    eventsRef.current = initialEvents;
+    eventsRef.current = [restartEvent];
     judgementsRef.current = [];
     judgedWordsRef.current = new Set<number>();
     samplesRef.current = [];
     lastSampleAtRef.current = 0;
     eventSequenceRef.current = 1;
     feedbackSequenceRef.current = 0;
-    resetTimer();
     targetRef.current = nextTarget;
     targetPositionsRef.current = createTargetPositions(nextTarget);
+    resetTimer();
 
     setTarget(nextTarget);
     setInput("");
+    setStatus("ready");
+    setElapsedMs(0);
     setStats({ ...emptyTypingSessionStats });
-    setEvents(initialEvents);
-    setJudgements([]);
+    setEvents([restartEvent]);
     setCadence(emptyCadence);
     setFeedback(emptyFeedback);
-    setElapsedMs(0);
     setLastResult(null);
-    setCurrentStatus("ready");
-  }, [configuration, resetTimer, setCurrentStatus]);
+  }, [configuration, resetTimer]);
 
   useEffect(() => {
     reset();
@@ -173,29 +167,31 @@ export function useTypingTest({
     }
 
     const interval = window.setInterval(() => {
-      const elapsed = getElapsed();
-      setElapsedMs(elapsed);
+      const currentElapsedMs = getElapsed();
+      setElapsedMs(currentElapsedMs);
 
-      if (elapsed - lastSampleAtRef.current >= 250) {
+      if (currentElapsedMs - lastSampleAtRef.current >= 250) {
         const currentMetrics = calculateMetrics(
           inputRef.current,
           targetRef.current,
-          elapsed,
+          currentElapsedMs,
           eventsRef.current,
           statsRef.current,
           true,
         );
-        samplesRef.current.push(createPerformanceSample(elapsed, currentMetrics));
-        lastSampleAtRef.current = elapsed;
+        samplesRef.current.push(createPerformanceSample(currentElapsedMs, currentMetrics));
+        lastSampleAtRef.current = currentElapsedMs;
       }
 
-      if (configuration.mode === "time" && elapsed >= configuration.value * 1000) {
-        finish(inputRef.current, configuration.value * 1000);
+      const timeLimitMs = configuration.value * 1000;
+
+      if (configuration.mode === "time" && currentElapsedMs >= timeLimitMs) {
+        finishTest(inputRef.current, timeLimitMs);
       }
     }, 80);
 
     return () => window.clearInterval(interval);
-  }, [configuration.mode, configuration.value, finish, getElapsed, status]);
+  }, [configuration.mode, configuration.value, finishTest, getElapsed, status]);
 
   const pause = useCallback(() => {
     if (statusRef.current !== "running") {
@@ -203,8 +199,8 @@ export function useTypingTest({
     }
 
     pauseTimer(performance.now());
-    setCurrentStatus("paused");
-  }, [pauseTimer, setCurrentStatus]);
+    changeStatus("paused");
+  }, [changeStatus, pauseTimer]);
 
   useEffect(() => {
     window.addEventListener("blur", pause);
@@ -229,14 +225,15 @@ export function useTypingTest({
       }
 
       const now = performance.now();
-      const activeElapsed = getElapsed(now);
+      const timeLimitMs = configuration.value * 1000;
+      const currentElapsedMs = getElapsed(now);
 
       if (
         configuration.mode === "time" &&
         statusRef.current === "running" &&
-        activeElapsed >= configuration.value * 1000
+        currentElapsedMs >= timeLimitMs
       ) {
-        finish(inputRef.current, configuration.value * 1000);
+        finishTest(inputRef.current, timeLimitMs);
         return emptyFeedback;
       }
 
@@ -244,12 +241,10 @@ export function useTypingTest({
 
       if (started) {
         startTimer(now);
-        setCurrentStatus("running");
-      }
-
-      if (statusRef.current === "paused") {
+        changeStatus("running");
+      } else if (statusRef.current === "paused") {
         resumeTimer(now);
-        setCurrentStatus("running");
+        changeStatus("running");
       }
 
       const activeTimestamp = started ? 0 : getElapsed(now);
@@ -261,7 +256,6 @@ export function useTypingTest({
         timestamp: activeTimestamp,
         sequenceStart: eventSequenceRef.current,
       });
-      eventSequenceRef.current += newEvents.length;
       const allEvents = [...eventsRef.current, ...newEvents];
       const eventResult = applyTypingEvents(statsRef.current, newEvents);
       const newJudgements = collectNewJudgements(
@@ -273,29 +267,31 @@ export function useTypingTest({
         activeTimestamp,
       );
 
+      eventSequenceRef.current += newEvents.length;
+
       for (const judgement of newJudgements) {
         judgedWordsRef.current.add(judgement.wordIndex);
       }
 
       const allJudgements = [...judgementsRef.current, ...newJudgements];
       const nextCadence = calculateCadence(allEvents);
-      const comboRecordThreshold = Math.max(10, previousBestCombo + 1);
-      const nextComboRecord =
-        eventResult.stats.maxCombo >= comboRecordThreshold &&
-        statsRef.current.maxCombo < comboRecordThreshold
+      const comboRecordTarget = Math.max(10, previousBestCombo + 1);
+      const comboRecord =
+        eventResult.stats.maxCombo >= comboRecordTarget &&
+        statsRef.current.maxCombo < comboRecordTarget
           ? eventResult.stats.maxCombo
           : null;
       const nextFeedback: TypingFeedback = {
         sequence: feedbackSequenceRef.current + 1,
-        impact: impactFromEvents(newEvents),
+        impact: getTypingImpact(newEvents),
         started,
         wordJudgement: newJudgements.at(-1) ?? null,
         comboMilestone: eventResult.comboMilestone,
         comboBreak: eventResult.comboBreak,
-        comboRecord: nextComboRecord,
+        comboRecord,
       };
-      feedbackSequenceRef.current = nextFeedback.sequence;
 
+      feedbackSequenceRef.current = nextFeedback.sequence;
       inputRef.current = limitedValue;
       eventsRef.current = allEvents;
       statsRef.current = eventResult.stats;
@@ -304,24 +300,24 @@ export function useTypingTest({
       setInput(limitedValue);
       setEvents(allEvents);
       setStats(eventResult.stats);
-      setJudgements(allJudgements);
       setCadence(nextCadence);
       setFeedback(nextFeedback);
 
       if (configuration.mode === "words" && limitedValue.length >= targetRef.current.length) {
-        finish(limitedValue, getElapsed(now));
+        finishTest(limitedValue, getElapsed(now));
       }
 
       return nextFeedback;
     },
     [
+      changeStatus,
       configuration.mode,
       configuration.noBackspace,
-      finish,
+      configuration.value,
+      finishTest,
       getElapsed,
       previousBestCombo,
       resumeTimer,
-      setCurrentStatus,
       startTimer,
     ],
   );
@@ -334,6 +330,7 @@ export function useTypingTest({
     () => calculateProgress(configuration, input.length, target.length, elapsedMs),
     [configuration, elapsedMs, input.length, target.length],
   );
+  const correctedIndices = useMemo(() => getCorrectedIndices(events), [events]);
 
   return {
     target,
@@ -342,8 +339,7 @@ export function useTypingTest({
     elapsedMs,
     metrics,
     progress,
-    events,
-    judgements,
+    correctedIndices,
     cadence,
     feedback,
     lastResult,

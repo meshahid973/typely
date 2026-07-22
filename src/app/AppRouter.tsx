@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { HistoryScreen } from "../features/history/HistoryScreen";
 import { InsightsScreen } from "../features/insights/InsightsScreen";
 import { PracticeScreen } from "../features/practice/PracticeScreen";
+import { shouldReduceMotion } from "../utils/motion";
 import { useApp } from "./AppProvider";
 import type { AppView } from "./app.types";
 
@@ -42,7 +43,7 @@ export function AppRouter() {
       return;
     }
 
-    if (settings.reducedMotion) {
+    if (settings.reducedMotion || shouldReduceMotion()) {
       setDisplayedView(view);
       setPhase("idle");
       return;

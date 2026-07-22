@@ -14,7 +14,7 @@ const initialConfiguration: TestConfiguration = {
 };
 
 export function PracticeScreen() {
-  const { settings, settingsOpen, addResult, results, setView } = useApp();
+  const { settings, settingsOpen, profileOpen, addResult, results, setView } = useApp();
   const [configuration, setConfiguration] = useState(initialConfiguration);
   const previousBestWpm = useMemo(
     () => results.reduce((best, result) => Math.max(best, result.wpm), 0),
@@ -34,7 +34,7 @@ export function PracticeScreen() {
     <TypingGameStage
       configuration={configuration}
       settings={settings}
-      settingsOpen={settingsOpen}
+      overlayOpen={settingsOpen || profileOpen}
       previousBestWpm={previousBestWpm}
       previousBestCombo={previousBestCombo}
       onConfigurationChange={setConfiguration}

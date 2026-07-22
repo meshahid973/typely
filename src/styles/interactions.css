@@ -1,8 +1,10 @@
 button {
   position: relative;
+  font: inherit;
   isolation: isolate;
   overflow: hidden;
   border: 0;
+  color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -448,4 +450,39 @@ button:disabled {
   transition:
     background-color var(--motion-standard) var(--ease-out),
     transform 160ms linear;
+}
+
+.toggle-row[data-compact="true"] {
+  min-height: 32px;
+  gap: 8px;
+  padding: 0;
+}
+
+.toggle-row[data-compact="true"] .toggle-copy strong {
+  font-size: 10px;
+}
+
+.toggle-row[data-compact="true"] .toggle-track {
+  width: 31px;
+  height: 18px;
+}
+
+.toggle-row[data-compact="true"] .toggle-track > span {
+  width: 12px;
+  height: 12px;
+}
+
+.toggle-row[data-compact="true"] .toggle-input:checked + .toggle-track > span {
+  transform: translateX(13px);
+}
+
+@media (max-width: 1020px) {
+  .navigation-button {
+    width: 34px;
+    padding-inline: 0;
+  }
+
+  .navigation-button-content > span {
+    display: none;
+  }
 }

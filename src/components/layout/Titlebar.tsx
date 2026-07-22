@@ -2,15 +2,14 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, Square, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { AppNavigation } from "./AppNavigation";
+import { ProfileChip } from "./ProfileChip";
 
-async function withAppWindow(
-  action: (window: ReturnType<typeof getCurrentWindow>) => Promise<void>,
-) {
+function runWindowAction(action: (window: ReturnType<typeof getCurrentWindow>) => Promise<void>) {
   if (!window.__TAURI_INTERNALS__) {
     return;
   }
 
-  await action(getCurrentWindow());
+  void action(getCurrentWindow()).catch(() => undefined);
 }
 
 export function Titlebar() {
@@ -23,19 +22,20 @@ export function Titlebar() {
         <span>typely</span>
       </div>
       <div className="titlebar-drag-region" data-tauri-drag-region />
+      <ProfileChip />
       <AppNavigation />
       <div className="titlebar-controls">
         <IconButton
           label="Minimize"
           tone="window"
-          onClick={() => withAppWindow((appWindow) => appWindow.minimize())}
+          onClick={() => runWindowAction((appWindow) => appWindow.minimize())}
         >
           <Minus size={14} strokeWidth={2.1} />
         </IconButton>
         <IconButton
           label="Maximize or restore"
           tone="window"
-          onClick={() => withAppWindow((appWindow) => appWindow.toggleMaximize())}
+          onClick={() => runWindowAction((appWindow) => appWindow.toggleMaximize())}
         >
           <Square size={11} strokeWidth={2.1} />
         </IconButton>
@@ -43,7 +43,7 @@ export function Titlebar() {
           label="Close"
           tone="window"
           className="titlebar-close"
-          onClick={() => withAppWindow((appWindow) => appWindow.close())}
+          onClick={() => runWindowAction((appWindow) => appWindow.close())}
         >
           <X size={14} strokeWidth={2.1} />
         </IconButton>

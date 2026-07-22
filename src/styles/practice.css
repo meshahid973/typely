@@ -358,7 +358,7 @@
 }
 
 .typing-caret-trail.is-visible {
-  opacity: calc(0.04 + var(--cadence-speed) * 0.08);
+  opacity: calc(0.008 + var(--cadence-speed) * 0.022);
 }
 
 .typing-caret.is-line-jump,

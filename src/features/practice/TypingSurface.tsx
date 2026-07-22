@@ -15,11 +15,10 @@ import type {
   TestConfiguration,
   TestStatus,
   TypingFeedback,
-  WordJudgement,
 } from "../../core/typing/types";
 import { cn } from "../../utils/cn";
+import { shouldReduceMotion } from "../../utils/motion";
 import { createTypingWords, TypingCharacter } from "./TypingCharacter";
-import { useCorrectionTracker } from "./useCorrectionTracker";
 import { useTypingCaret } from "./useTypingCaret";
 import { useTypingFeedbackEffects } from "./useTypingFeedbackEffects";
 
@@ -30,13 +29,9 @@ interface TypingSurfaceProps {
   configuration: TestConfiguration;
   cadence: CadenceMetrics;
   feedback: TypingFeedback;
-  latestJudgement: WordJudgement | null;
+  correctedIndices: ReadonlySet<number>;
   onInput: (value: string) => TypingFeedback;
   onReset: () => void;
-}
-
-function judgementLabel(judgement: WordJudgement) {
-  return judgement.type;
 }
 
 export function TypingSurface({
@@ -46,46 +41,39 @@ export function TypingSurface({
   configuration,
   cadence,
   feedback,
-  latestJudgement,
+  correctedIndices,
   onInput,
   onReset,
 }: TypingSurfaceProps) {
   const { settings } = useApp();
   const inputElement = useRef<HTMLTextAreaElement>(null);
   const copyElement = useRef<HTMLDivElement>(null);
-  const activeCharacter = useRef<HTMLSpanElement>(null);
   const caretElement = useRef<HTMLSpanElement>(null);
   const [focused, setFocused] = useState(false);
   const words = useMemo(() => createTypingWords(target), [target]);
   const activeIndex = input.length;
-  const { correctedIndices, trackCorrections } = useCorrectionTracker(target, input);
   const caret = useTypingCaret({
     copyElement,
-    activeCharacter,
     activeIndex,
     targetLength: target.length,
     caretStyle: settings.caretStyle,
     reducedMotion: settings.reducedMotion,
     status,
   });
+  const { visibleJudgement, playFeedback } = useTypingFeedbackEffects({
+    cadence,
+    caretElement,
+    feedback,
+    settings,
+  });
 
   useEffect(() => {
     inputElement.current?.focus();
   }, []);
 
-  const { visibleJudgement, playFeedback } = useTypingFeedbackEffects({
-    cadence,
-    caretElement,
-    feedback,
-    latestJudgement,
-    settings,
-  });
-
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const nextValue = event.target.value.replace(/[\r\n]/g, "");
-    trackCorrections(nextValue);
-    const nextFeedback = onInput(nextValue);
-    playFeedback(nextFeedback);
+    playFeedback(onInput(nextValue));
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -114,14 +102,7 @@ export function TypingSurface({
       return;
     }
 
-    if (
-      event.key === "ArrowLeft" ||
-      event.key === "ArrowRight" ||
-      event.key === "ArrowUp" ||
-      event.key === "ArrowDown" ||
-      event.key === "Home" ||
-      event.key === "End"
-    ) {
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
       event.preventDefault();
     }
   };
@@ -129,23 +110,24 @@ export function TypingSurface({
   const keepSelectionAtEnd = () => {
     const element = inputElement.current;
 
-    if (!element || element.selectionStart === input.length) {
+    if (
+      !element ||
+      (element.selectionStart === input.length && element.selectionEnd === input.length)
+    ) {
       return;
     }
 
     element.setSelectionRange(input.length, input.length);
   };
 
+  const reduceMotion = settings.reducedMotion || shouldReduceMotion();
   const showJudgement =
     settings.judgementsEnabled &&
-    !settings.reducedMotion &&
+    !reduceMotion &&
     visibleJudgement !== null &&
     status !== "complete";
   const showTrail =
-    settings.cadenceEffects &&
-    !settings.reducedMotion &&
-    cadence.speed > 0.42 &&
-    status === "running";
+    settings.cadenceEffects && !reduceMotion && cadence.speed > 0.94 && status === "running";
 
   return (
     <section
@@ -200,7 +182,7 @@ export function TypingSurface({
             className={cn("word-judgement", `is-${visibleJudgement.type}`)}
             style={caret.judgementStyle}
           >
-            {judgementLabel(visibleJudgement)}
+            {visibleJudgement.type}
           </span>
         )}
         {words.map((word) => (
@@ -215,7 +197,6 @@ export function TypingSurface({
                   typedCharacter={input[unit.index]}
                   active={active}
                   corrected={correctedIndices.has(unit.index)}
-                  elementRef={active ? activeCharacter : undefined}
                 />
               );
             })}

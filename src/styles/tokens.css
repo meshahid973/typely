@@ -27,11 +27,11 @@
   --radius-small: 7px;
   --radius-control: 9px;
   --radius-panel: 13px;
-  --motion-instant: 90ms;
-  --motion-fast: 150ms;
-  --motion-standard: 240ms;
-  --motion-screen: 300ms;
-  --motion-reveal: 420ms;
+  --motion-instant: 100ms;
+  --motion-fast: 170ms;
+  --motion-standard: 270ms;
+  --motion-screen: 350ms;
+  --motion-reveal: 470ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring: cubic-bezier(0.16, 1.24, 0.3, 1);
@@ -76,17 +76,6 @@
   --accent: var(--sky);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --motion-instant: 1ms;
-    --motion-fast: 1ms;
-    --motion-standard: 1ms;
-    --motion-screen: 1ms;
-    --motion-reveal: 1ms;
-    --scroll-behavior: auto;
-  }
-}
-
 :root[data-motion="reduced"] {
   --motion-instant: 1ms;
   --motion-fast: 1ms;
@@ -94,4 +83,11 @@
   --motion-screen: 1ms;
   --motion-reveal: 1ms;
   --scroll-behavior: auto;
+}
+
+:root[data-contrast="high"] {
+  --foreground-muted: color-mix(in srgb, var(--foreground) 76%, transparent);
+  --foreground-faint: color-mix(in srgb, var(--foreground) 58%, transparent);
+  --border: color-mix(in srgb, var(--foreground) 18%, transparent);
+  --border-strong: color-mix(in srgb, var(--foreground) 32%, transparent);
 }

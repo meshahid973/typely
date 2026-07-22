@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { shouldReduceMotion } from "../utils/motion";
 
 interface ParsedNumber {
   number: number;
@@ -42,13 +43,6 @@ function formatNumber(value: number, parsed: ParsedNumber) {
   return `${parsed.prefix}${value.toFixed(parsed.decimals)}${parsed.suffix}`;
 }
 
-function isReducedMotion() {
-  return (
-    document.documentElement.dataset.motion === "reduced" ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
 function easeOutQuint(value: number) {
   return 1 - (1 - value) ** 5;
 }
@@ -73,7 +67,7 @@ export function useAnimatedNumber(value: number | string, duration = 280) {
       animationFrame.current = null;
     }
 
-    if (isReducedMotion()) {
+    if (shouldReduceMotion()) {
       currentValue.current = parsed.number;
       setDisplayValue(formatNumber(parsed.number, parsed));
       return;

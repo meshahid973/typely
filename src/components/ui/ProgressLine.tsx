@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { useEffect, useRef } from "react";
+import { shouldReduceMotion } from "../../utils/motion";
 
 interface ProgressLineProps {
   value: number;
@@ -25,7 +26,7 @@ export function ProgressLine({
   useEffect(() => {
     const element = fillRef.current;
 
-    if (!element || impactSequence === 0 || normalizedEnergy <= 0) {
+    if (!element || impactSequence === 0 || normalizedEnergy <= 0 || shouldReduceMotion()) {
       return;
     }
 

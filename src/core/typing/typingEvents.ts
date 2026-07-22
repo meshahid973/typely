@@ -1,4 +1,4 @@
-import type { TargetPosition, TypingEvent, TypingSessionStats } from "./types";
+import type { TargetPosition, TypingEvent, TypingFeedback, TypingSessionStats } from "./types";
 
 export const emptyTypingSessionStats: TypingSessionStats = {
   correctKeystrokes: 0,
@@ -44,6 +44,20 @@ export function createTargetPositions(target: string) {
   }
 
   return positions;
+}
+
+export function createRestartEvent(timestamp: number): TypingEvent {
+  return {
+    id: "event-0",
+    timestamp,
+    type: "restart",
+    expectedCharacter: null,
+    enteredCharacter: null,
+    targetIndex: 0,
+    wordIndex: 0,
+    characterIndex: 0,
+    correct: true,
+  };
 }
 
 interface CreateTypingEventsOptions {
@@ -151,6 +165,36 @@ export function applyTypingEvents(current: TypingSessionStats, events: TypingEve
   }
 
   return { stats: next, comboMilestone, comboBreak };
+}
+
+export function getTypingImpact(events: TypingEvent[]): TypingFeedback["impact"] {
+  const lastEvent = events.at(-1);
+
+  if (!lastEvent) return "none";
+  if (lastEvent.type === "backspace") return "backspace";
+  return lastEvent.correct ? "correct" : "incorrect";
+}
+
+export function getCorrectedIndices(events: TypingEvent[]) {
+  const incorrectIndices = new Set<number>();
+  const correctedIndices = new Set<number>();
+
+  for (const event of events) {
+    if (event.type === "restart" || event.type === "backspace") {
+      continue;
+    }
+
+    if (!event.correct) {
+      incorrectIndices.add(event.targetIndex);
+      continue;
+    }
+
+    if (incorrectIndices.has(event.targetIndex)) {
+      correctedIndices.add(event.targetIndex);
+    }
+  }
+
+  return correctedIndices;
 }
 
 export function summarizeTypingEvents(events: TypingEvent[]) {

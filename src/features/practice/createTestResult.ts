@@ -3,59 +3,17 @@ import { calculateGrade } from "../../core/scoring/calculateGrade";
 import { calculateScore } from "../../core/scoring/calculateScore";
 import { createPerformanceSample } from "../../core/typing/metrics";
 import type {
-  CadenceMetrics,
   PerformanceSample,
   TestConfiguration,
   TestMetrics,
   TypingEvent,
-  TypingFeedback,
   WordJudgement,
 } from "../../core/typing/types";
 
-export const emptyCadence: CadenceMetrics = {
-  energy: 0,
-  speed: 0,
-  consistency: 1,
-  averageIntervalMs: 0,
-};
-
-export const emptyFeedback: TypingFeedback = {
-  sequence: 0,
-  impact: "none",
-  started: false,
-  wordJudgement: null,
-  comboMilestone: null,
-  comboBreak: null,
-  comboRecord: null,
-};
-
-export function createRestartEvent(timestamp: number): TypingEvent {
-  return {
-    id: "event-0",
-    timestamp,
-    type: "restart",
-    expectedCharacter: null,
-    enteredCharacter: null,
-    targetIndex: 0,
-    wordIndex: 0,
-    characterIndex: 0,
-    correct: true,
-  };
-}
-
-export function impactFromEvents(events: TypingEvent[]): TypingFeedback["impact"] {
-  const last = events.at(-1);
-
-  if (!last) return "none";
-  if (last.type === "backspace") return "backspace";
-  return last.correct ? "correct" : "incorrect";
-}
-
-interface CreateResultOptions {
+interface CreateTestResultOptions {
   configuration: TestConfiguration;
   elapsedMs: number;
   events: TypingEvent[];
-  input: string;
   judgements: WordJudgement[];
   metrics: TestMetrics;
   previousBestWpm: number;
@@ -67,13 +25,12 @@ export function createTestResult({
   configuration,
   elapsedMs,
   events,
-  input,
   judgements,
   metrics,
   previousBestWpm,
   samples,
   target,
-}: CreateResultOptions): TestResult {
+}: CreateTestResultOptions): TestResult {
   const score = calculateScore(metrics, judgements, configuration);
   const performanceSamples = [
     ...samples.filter((sample) => Math.abs(sample.elapsedMs - elapsedMs) > 100),
@@ -106,7 +63,5 @@ export function createTestResult({
     performanceSamples,
     typingEvents: events,
     target,
-    punctuation: configuration.punctuation,
-    numbers: configuration.numbers,
   };
 }

@@ -19,15 +19,10 @@ body {
   user-select: none;
 }
 
-button,
 input,
 textarea,
 select {
   font: inherit;
-}
-
-button {
-  color: inherit;
 }
 
 fieldset {
@@ -51,7 +46,8 @@ fieldset {
 
 button:focus-visible,
 textarea:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 76%, var(--foreground));
   outline-offset: 2px;
 }
@@ -244,15 +240,6 @@ input:focus-visible {
 
   .titlebar-brand {
     min-width: auto;
-  }
-
-  .navigation-button {
-    width: 34px;
-    padding-inline: 0;
-  }
-
-  .navigation-button-content > span {
-    display: none;
   }
 
   .view {

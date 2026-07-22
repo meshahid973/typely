@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import type { PropsWithChildren } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { IconButton } from "./IconButton";
 
 interface DrawerProps {
@@ -8,6 +8,7 @@ interface DrawerProps {
   title: string;
   description?: string;
   onClose: () => void;
+  closeLabel?: string;
 }
 
 const focusableSelector = [
@@ -24,12 +25,14 @@ export function Drawer({
   title,
   description,
   onClose,
+  closeLabel = `Close ${title.toLowerCase()}`,
   children,
 }: PropsWithChildren<DrawerProps>) {
   const drawerRef = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const titleId = "settings-drawer-title";
-  const descriptionId = "settings-drawer-description";
+  const drawerId = useId();
+  const titleId = `${drawerId}-title`;
+  const descriptionId = `${drawerId}-description`;
 
   useEffect(() => {
     if (!open) {
@@ -85,7 +88,7 @@ export function Drawer({
         type="button"
         className="drawer-scrim"
         data-sound="none"
-        aria-label="Close settings"
+        aria-label={closeLabel}
         tabIndex={open ? 0 : -1}
         onClick={onClose}
       />
@@ -102,7 +105,7 @@ export function Drawer({
             <h2 id={titleId}>{title}</h2>
             {description && <p id={descriptionId}>{description}</p>}
           </div>
-          <IconButton ref={closeButton} label="Close settings" onClick={onClose}>
+          <IconButton ref={closeButton} label={closeLabel} onClick={onClose}>
             <X size={17} />
           </IconButton>
         </header>

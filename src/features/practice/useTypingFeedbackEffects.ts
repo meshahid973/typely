@@ -2,12 +2,12 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from "react"
 import type { AppSettings } from "../../app/app.types";
 import { audioEngine } from "../../audio/audioEngine";
 import type { CadenceMetrics, TypingFeedback, WordJudgement } from "../../core/typing/types";
+import { shouldReduceMotion } from "../../utils/motion";
 
 interface UseTypingFeedbackEffectsOptions {
   cadence: CadenceMetrics;
   caretElement: RefObject<HTMLSpanElement | null>;
   feedback: TypingFeedback;
-  latestJudgement: WordJudgement | null;
   settings: AppSettings;
 }
 
@@ -15,25 +15,28 @@ export function useTypingFeedbackEffects({
   cadence,
   caretElement,
   feedback,
-  latestJudgement,
   settings,
 }: UseTypingFeedbackEffectsOptions) {
   const judgementTimeout = useRef<number | null>(null);
   const [visibleJudgement, setVisibleJudgement] = useState<WordJudgement | null>(null);
 
   useEffect(() => {
-    if (!latestJudgement) return;
+    const judgement = feedback.wordJudgement;
+
+    if (!judgement) {
+      return;
+    }
 
     if (judgementTimeout.current !== null) {
       window.clearTimeout(judgementTimeout.current);
     }
 
-    setVisibleJudgement(latestJudgement);
+    setVisibleJudgement(judgement);
     judgementTimeout.current = window.setTimeout(() => {
       setVisibleJudgement(null);
       judgementTimeout.current = null;
     }, 620);
-  }, [latestJudgement]);
+  }, [feedback.wordJudgement]);
 
   useEffect(
     () => () => {
@@ -47,13 +50,17 @@ export function useTypingFeedbackEffects({
   useEffect(() => {
     const element = caretElement.current;
 
-    if (!element || settings.reducedMotion || feedback.sequence === 0) return;
+    if (!element || settings.reducedMotion || shouldReduceMotion() || feedback.sequence === 0) {
+      return;
+    }
 
     const incorrect = feedback.impact === "incorrect";
     const scaleX = incorrect ? 1.55 : 0.62 + cadence.speed * 0.12;
     const scaleY = incorrect ? 0.82 : 1.12 + cadence.energy * 0.08;
 
-    element.getAnimations().forEach((animation) => animation.cancel());
+    element.getAnimations().forEach((animation) => {
+      animation.cancel();
+    });
     element.animate(
       [
         {
@@ -78,11 +85,17 @@ export function useTypingFeedbackEffects({
 
   const playFeedback = useCallback(
     (nextFeedback: TypingFeedback) => {
+      if (nextFeedback.sequence === 0) {
+        return;
+      }
+
       const pitch = 0.96 + cadence.speed * 0.08;
 
       if (nextFeedback.started) {
         audioEngine.play("test-start");
-      } else if (nextFeedback.impact === "incorrect") {
+      }
+
+      if (nextFeedback.impact === "incorrect") {
         audioEngine.play("typing-error");
       } else if (nextFeedback.impact === "correct") {
         audioEngine.play("typing-correct", { pitch });
@@ -93,7 +106,10 @@ export function useTypingFeedbackEffects({
         audioEngine.play("combo-milestone", {
           pitch: Math.min(1.08, 1 + combo / 2500),
         });
-      } else if (nextFeedback.wordJudgement?.type !== "miss") {
+        return;
+      }
+
+      if (nextFeedback.wordJudgement && nextFeedback.wordJudgement.type !== "miss") {
         audioEngine.play("word-complete", { pitch });
       }
     },

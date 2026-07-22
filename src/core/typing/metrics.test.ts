@@ -6,6 +6,7 @@ import {
   createTargetPositions,
   createTypingEvents,
   emptyTypingSessionStats,
+  getCorrectedIndices,
 } from "./typingEvents";
 
 const configuration: TestConfiguration = {
@@ -87,5 +88,18 @@ describe("calculateMetrics", () => {
 describe("calculateProgress", () => {
   it("caps progress at one", () => {
     expect(calculateProgress(configuration, 0, 100, 40000)).toBe(1);
+  });
+});
+
+describe("correction history", () => {
+  it("keeps corrected positions without marking deleted text as corrected", () => {
+    const target = "hello";
+    const first = createEvents("", "hez", target, 1);
+    const deleted = createEvents("hez", "he", target, 4);
+    const corrected = createEvents("he", "hel", target, 5);
+    const correctedIndices = getCorrectedIndices([...first, ...deleted, ...corrected]);
+
+    expect(correctedIndices.has(2)).toBe(true);
+    expect(correctedIndices.has(3)).toBe(false);
   });
 });

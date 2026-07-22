@@ -1,0 +1,151 @@
+.replay-player {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.replay-heading,
+.replay-controls,
+.replay-live-stats,
+.replay-controls > div,
+.replay-speed {
+  display: flex;
+  align-items: center;
+}
+
+.replay-heading,
+.replay-controls {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.replay-heading > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.replay-heading span,
+.replay-live-stats,
+.replay-speed button {
+  color: var(--foreground-faint);
+  font-size: 9px;
+}
+
+.replay-heading strong {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-live-stats,
+.replay-controls > div,
+.replay-speed {
+  gap: 7px;
+}
+
+.replay-live-stats span {
+  padding-left: 7px;
+  border-left: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-copy {
+  height: 150px;
+  overflow: hidden;
+  padding: 12px 0;
+  color: var(--foreground-faint);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 620;
+  letter-spacing: -0.035em;
+  line-height: 1.5;
+}
+
+.replay-character {
+  color: var(--foreground-faint);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    opacity var(--motion-fast) var(--ease-out);
+}
+
+.replay-character.is-correct {
+  color: var(--foreground);
+}
+
+.replay-character.is-incorrect {
+  color: var(--danger);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.replay-character.is-active {
+  border-left: 2px solid var(--accent-strong);
+}
+
+.replay-seek {
+  width: 100%;
+  accent-color: var(--accent-strong);
+}
+
+.replay-speed button {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--foreground-muted);
+  transition:
+    background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-standard) var(--ease-spring);
+}
+
+.replay-speed button:hover {
+  background: var(--surface-hover);
+  color: var(--foreground);
+  transform: translateY(-1px);
+}
+
+.replay-speed button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+.replay-unavailable {
+  min-height: 140px;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground-muted);
+  text-align: center;
+}
+
+.replay-unavailable strong {
+  color: var(--foreground);
+  font-size: 13px;
+}
+
+.replay-unavailable span {
+  max-width: 290px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.replay-ellipsis {
+  color: var(--foreground-faint);
+  opacity: 0.55;
+}
+
+.replay-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  color: var(--foreground-faint);
+  font-size: 9px;
+}
+
+.replay-markers strong {
+  color: var(--foreground-muted);
+  font-weight: 680;
+}
