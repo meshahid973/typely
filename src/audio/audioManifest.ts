@@ -9,6 +9,7 @@ export type SoundPackId =
 export type AudioEffect =
   | "typing-correct"
   | "typing-error"
+  | "typing-backspace"
   | "word-complete"
   | "combo-milestone"
   | "test-start"

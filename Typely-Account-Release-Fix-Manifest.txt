@@ -1,0 +1,42 @@
+Typely Account Release Fix V1
+
+Purpose
+-------
+Fix official GitHub/Tauri release builds that displayed:
+"Account server not configured"
+
+Root cause
+----------
+The root .env file is intentionally ignored by Git and exists only on the
+developer's PC. GitHub Actions builds releases on a clean runner, and the
+release workflow did not define VITE_TYPELY_API_URL. Vite therefore compiled
+the public installer with an empty account server URL.
+
+Changes
+-------
+1. src/api/authClient.ts
+   - Adds the official public Typely Worker as a safe built-in default.
+   - Keeps VITE_TYPELY_API_URL as an optional deployment override.
+   - Improves the network error message.
+   - Exposes the resolved URL for tests.
+
+2. src/api/authClient.test.ts
+   - Tests fallback configuration and URL overrides.
+
+3. .github/workflows/release.yml
+   - Defines VITE_TYPELY_API_URL for every release build.
+   - Verifies the expected URL before building.
+   - Verifies the compiled frontend contains the account server URL.
+
+4. .env.example
+   - Uses the real public account server URL.
+
+5. scripts/check-account-server.ps1
+   - Checks Worker health, D1 readiness, required secrets, password hashing
+     configuration, and Tauri CORS without creating a diagnostic account.
+
+Important
+---------
+Existing installers cannot be repaired after compilation. Push these changes
+and create a new version tag/release so users download a newly built installer.
+The Worker secrets remain server-side and are never placed in the desktop app.

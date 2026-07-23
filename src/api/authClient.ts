@@ -6,7 +6,14 @@ import type {
 } from "../features/auth/auth.types";
 
 const tokenStorageKey = "typely.auth.token";
-const apiBaseUrl = (import.meta.env.VITE_TYPELY_API_URL ?? "").trim().replace(/\/+$/, "");
+export const defaultAuthApiBaseUrl = "https://typely-api.coderpixelbusiness.workers.dev";
+
+export function resolveAuthApiBaseUrl(value?: string) {
+  const configured = (value ?? "").trim().replace(/\/+$/, "");
+  return configured || defaultAuthApiBaseUrl;
+}
+
+const apiBaseUrl = resolveAuthApiBaseUrl(import.meta.env.VITE_TYPELY_API_URL);
 
 interface ApiErrorBody {
   error?: {
@@ -36,6 +43,10 @@ export function isAuthApiConfigured() {
   return apiBaseUrl.length > 0;
 }
 
+export function getAuthApiBaseUrl() {
+  return apiBaseUrl;
+}
+
 export function readStoredAuthToken() {
   try {
     return window.localStorage.getItem(tokenStorageKey);
@@ -61,10 +72,6 @@ async function request<T>(
   options: RequestInit = {},
   token?: string | null,
 ): Promise<T> {
-  if (!isAuthApiConfigured()) {
-    throw new AuthApiError("Cloud accounts are not configured for this build.", "not_configured");
-  }
-
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
 
@@ -84,7 +91,10 @@ async function request<T>(
       headers,
     });
   } catch {
-    throw new AuthApiError("Typely could not reach the account server.", "network_error");
+    throw new AuthApiError(
+      "Typely could not reach the account server. Check your connection and try again.",
+      "network_error",
+    );
   }
 
   const body = (await response.json().catch(() => null)) as (T & ApiErrorBody) | null;

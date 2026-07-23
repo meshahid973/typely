@@ -19,6 +19,20 @@ export function createSoundTones(
   const packGain = pack === "muted" ? 0.38 : 1;
   const variantOffset = [0, 18, -12][variant % 3];
 
+  if (effect === "typing-backspace") {
+    return [
+      {
+        frequency: pack === "digital" ? 330 : 218,
+        endFrequency: pack === "digital" ? 270 : 176,
+        duration: 0.032,
+        gain: 0.016 * packGain,
+        type: pack === "digital" ? "sine" : "triangle",
+        filterFrequency: 980,
+        noise: pack === "typewriter" ? 0.02 : 0.006,
+      },
+    ];
+  }
+
   if (effect === "typing-error") {
     return [
       {

@@ -128,6 +128,7 @@ export function AppRouter() {
       className="screen-transition"
       data-direction={direction}
       data-phase={phase}
+      data-view={displayedView}
     >
       {renderView(displayedView)}
     </div>

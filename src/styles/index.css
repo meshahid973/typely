@@ -11,4 +11,6 @@
 @import "./auth.css";
 @import "./insights.css";
 @import "./overlays.css";
+@import "./performance.css";
+@import "./phase2.css";
 @import "./motion.css";

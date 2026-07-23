@@ -1,0 +1,158 @@
+/* Advanced performance, challenge modifiers, and word-level feedback. */
+.result-performance-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  padding: 2px 0 12px;
+}
+
+.result-tp-stat,
+.result-difficulty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-tp-stat strong {
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.result-tp-stat span,
+.result-difficulty span,
+.result-score-version {
+  color: var(--foreground-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.result-difficulty {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.result-difficulty strong {
+  font-size: 1.12rem;
+}
+
+.result-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.result-badges span {
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 32%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 68%, transparent);
+  color: var(--foreground);
+  padding: 5px 9px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.result-stage[data-failed="true"] .result-grade,
+.result-stage[data-failed="true"] .result-tp-stat strong {
+  color: var(--danger);
+}
+
+.result-stage[data-failed="true"] .result-stage-heading > span {
+  color: var(--danger);
+}
+
+.result-score-version {
+  margin-left: auto;
+  align-self: center;
+}
+
+.modifier-row-configurable {
+  min-height: 64px;
+}
+
+.modifier-number-field {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 82px;
+  color: var(--foreground-muted);
+  font-size: 0.7rem;
+}
+
+.modifier-number-field input {
+  width: 52px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--foreground);
+  padding: 5px 6px;
+  text-align: right;
+}
+
+.typing-surface[data-focus-mode="true"] .typing-word {
+  opacity: 0.22;
+  transition:
+    opacity 150ms var(--ease-out),
+    filter 150ms var(--ease-out);
+}
+
+.typing-surface[data-focus-mode="true"] .typing-word.is-active-word {
+  opacity: 1;
+  filter: none;
+}
+
+.typing-surface[data-focus-mode="true"][data-status="complete"] .typing-word {
+  opacity: 1;
+}
+
+.word-judgement.is-clean {
+  color: var(--accent-strong);
+}
+
+.word-judgement.is-recovered {
+  color: var(--warning, var(--foreground-muted));
+}
+
+.word-judgement.is-burst {
+  color: var(--accent-strong);
+  letter-spacing: 0.08em;
+}
+
+.word-judgement.is-miss {
+  color: var(--danger);
+}
+
+@media (max-width: 620px) {
+  .result-performance-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .result-difficulty {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .modifier-row-configurable {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .modifier-number-field {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+.result-stage[data-details-open="true"] .result-extra {
+  max-height: 180px;
+}
+
+@media (max-width: 980px) {
+  .result-stage[data-details-open="true"] .result-extra {
+    max-height: 260px;
+  }
+}

@@ -1,7 +1,9 @@
+import { getTypingChallenge } from "../challenges/challenges";
 import type { TestConfiguration } from "./types";
 import { commonWords } from "./wordList";
 
 const punctuationMarks = [".", ",", "?", "!", ";"];
+const symbols = ["@", "#", "$", "%", "&", "*", "+", "=", "_", "/"];
 
 function randomItem<T>(items: T[]) {
   return items[Math.floor(Math.random() * items.length)];
@@ -12,6 +14,9 @@ function applyCapital(word: string) {
 }
 
 export function createTarget(configuration: TestConfiguration) {
+  const challenge = getTypingChallenge(configuration.challengeId);
+  if (challenge) return challenge.text;
+
   const wordCount =
     configuration.mode === "words"
       ? configuration.value
@@ -23,12 +28,12 @@ export function createTarget(configuration: TestConfiguration) {
       word = `${word}${Math.floor(Math.random() * 90 + 10)}`;
     }
 
-    if (configuration.capitals && index % 9 === 0) {
-      word = applyCapital(word);
-    }
-
+    if (configuration.capitals && index % 9 === 0) word = applyCapital(word);
     if (configuration.punctuation && index > 0 && index % 7 === 0) {
       word = `${word}${randomItem(punctuationMarks)}`;
+    }
+    if (configuration.symbols && index > 0 && index % 8 === 0) {
+      word = `${randomItem(symbols)}${word}${randomItem(symbols)}`;
     }
 
     return word;

@@ -58,9 +58,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   const profile = useMemo(() => normalizeProfile(storedProfile, results), [results, storedProfile]);
 
   useEffect(() => {
-    if (migrationComplete.current) {
-      return;
-    }
+    if (migrationComplete.current) return;
 
     migrationComplete.current = true;
     const currentVersion = Number(window.localStorage.getItem("typely.schema") ?? 0);
@@ -83,6 +81,10 @@ export function AppProvider({ children }: PropsWithChildren) {
     root.dataset.accent = settings.accent;
     root.dataset.motion = settings.reducedMotion ? "reduced" : "full";
     root.dataset.contrast = settings.highContrast ? "high" : "normal";
+    root.dataset.textFocus = settings.textFocusStyle;
+    root.dataset.trail = settings.trailIntensity;
+    root.dataset.resultMotion = settings.resultMotion;
+    root.dataset.backgroundTreatment = settings.backgroundTreatment;
 
     audioEngine.configure({
       enabled: settings.soundEnabled,
@@ -231,10 +233,6 @@ export function AppProvider({ children }: PropsWithChildren) {
 
 export function useApp() {
   const context = useContext(AppContext);
-
-  if (!context) {
-    throw new Error("useApp must be used inside AppProvider.");
-  }
-
+  if (!context) throw new Error("useApp must be used inside AppProvider.");
   return context;
 }

@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
-import type { PropsWithChildren } from "react";
-import { useEffect, useId, useRef } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../../utils/cn";
+import { closeSharedElement, type SharedElementKey } from "../../utils/motion";
 import { IconButton } from "./IconButton";
 
 export type DrawerSize = "compact" | "standard" | "wide";
@@ -15,6 +16,8 @@ interface DrawerProps {
   closeLabel?: string;
   size?: DrawerSize;
   className?: string;
+  sharedKey?: SharedElementKey;
+  headerVisual?: ReactNode;
 }
 
 const focusableSelector = [
@@ -34,6 +37,8 @@ export function Drawer({
   closeLabel = `Close ${title.toLowerCase()}`,
   size = "standard",
   className,
+  sharedKey,
+  headerVisual,
   children,
 }: PropsWithChildren<DrawerProps>) {
   const drawerRef = useRef<HTMLElement>(null);
@@ -43,6 +48,13 @@ export function Drawer({
   const drawerId = useId();
   const titleId = `${drawerId}-title`;
   const descriptionId = `${drawerId}-description`;
+  const requestClose = useCallback(() => {
+    if (sharedKey) {
+      closeSharedElement(sharedKey, onClose);
+    } else {
+      onClose();
+    }
+  }, [onClose, sharedKey]);
 
   useEffect(() => {
     if (!open) {
@@ -64,7 +76,7 @@ export function Drawer({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        requestClose();
         return;
       }
 
@@ -103,7 +115,7 @@ export function Drawer({
         restoreFrame.current = null;
       });
     };
-  }, [onClose, open]);
+  }, [open, requestClose]);
 
   useEffect(() => {
     return () => {
@@ -127,23 +139,29 @@ export function Drawer({
         data-sound="none"
         aria-label={closeLabel}
         tabIndex={open ? 0 : -1}
-        onClick={onClose}
+        onClick={requestClose}
       />
       <aside
         ref={drawerRef}
         className={cn("drawer", className)}
         data-size={size}
+        data-open={open}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
       >
-        <header className="drawer-header">
-          <div>
+        <header className={cn("drawer-header", Boolean(headerVisual) && "has-header-visual")}>
+          {headerVisual && sharedKey && (
+            <div className="drawer-header-visual" data-shared-target={sharedKey}>
+              {headerVisual}
+            </div>
+          )}
+          <div className="drawer-header-copy">
             <h2 id={titleId}>{title}</h2>
             {description && <p id={descriptionId}>{description}</p>}
           </div>
-          <IconButton ref={closeButton} label={closeLabel} onClick={onClose}>
+          <IconButton ref={closeButton} label={closeLabel} onClick={requestClose}>
             <X size={18} />
           </IconButton>
         </header>

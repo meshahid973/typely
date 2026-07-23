@@ -23,25 +23,23 @@ export function hasModifiers(result: TestResult) {
     configuration.punctuation ||
     configuration.numbers ||
     configuration.capitals ||
+    configuration.symbols ||
     configuration.noBackspace ||
-    configuration.hidden
+    configuration.hidden ||
+    configuration.focusMode ||
+    configuration.noLiveWpm ||
+    configuration.suddenDeath ||
+    configuration.accuracyTarget !== null ||
+    configuration.minimumPace !== null ||
+    configuration.ghostRace
   );
 }
 
 export function filterHistoryResults(results: TestResult[], filters: HistoryFilterState) {
   return results.filter((result) => {
-    if (filters.mode !== "all" && result.mode !== filters.mode) {
-      return false;
-    }
-
-    if (filters.grade !== "all" && result.grade !== filters.grade) {
-      return false;
-    }
-
-    if (filters.modifiersOnly && !hasModifiers(result)) {
-      return false;
-    }
-
+    if (filters.mode !== "all" && result.mode !== filters.mode) return false;
+    if (filters.grade !== "all" && result.grade !== filters.grade) return false;
+    if (filters.modifiersOnly && !hasModifiers(result)) return false;
     return true;
   });
 }

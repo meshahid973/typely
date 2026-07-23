@@ -58,9 +58,9 @@ export function useTypingFeedbackEffects({
     const scaleX = incorrect ? 1.55 : 0.62 + cadence.speed * 0.12;
     const scaleY = incorrect ? 0.82 : 1.12 + cadence.energy * 0.08;
 
-    element.getAnimations().forEach((animation) => {
+    for (const animation of element.getAnimations()) {
       animation.cancel();
-    });
+    }
     element.animate(
       [
         {
@@ -97,6 +97,8 @@ export function useTypingFeedbackEffects({
 
       if (nextFeedback.impact === "incorrect") {
         audioEngine.play("typing-error");
+      } else if (nextFeedback.impact === "backspace") {
+        audioEngine.play("typing-backspace");
       } else if (nextFeedback.impact === "correct") {
         audioEngine.play("typing-correct", { pitch });
       }

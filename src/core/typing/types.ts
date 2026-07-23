@@ -1,7 +1,8 @@
 export type TestMode = "time" | "words";
 export type TestStatus = "ready" | "running" | "paused" | "complete";
 export type TypingEventType = "character" | "backspace" | "space" | "restart";
-export type WordJudgementType = "perfect" | "great" | "good" | "miss";
+export type WordJudgementType = "perfect" | "clean" | "recovered" | "miss" | "burst";
+export type ResultBadgeId = "personal-best" | "full-combo" | "clean-run" | "comeback";
 
 export interface TestConfiguration {
   mode: TestMode;
@@ -9,8 +10,16 @@ export interface TestConfiguration {
   punctuation: boolean;
   numbers: boolean;
   capitals: boolean;
+  symbols: boolean;
   noBackspace: boolean;
   hidden: boolean;
+  focusMode: boolean;
+  noLiveWpm: boolean;
+  suddenDeath: boolean;
+  accuracyTarget: number | null;
+  minimumPace: number | null;
+  challengeId: string | null;
+  ghostRace: boolean;
 }
 
 export interface TargetPosition {
@@ -49,6 +58,10 @@ export interface WordJudgement {
   wordIndex: number;
   type: WordJudgementType;
   mistakeCount: number;
+  backspaceCount: number;
+  durationMs: number;
+  averageIntervalMs: number;
+  wpm: number;
 }
 
 export interface CadenceMetrics {
@@ -64,6 +77,12 @@ export interface PerformanceSample {
   rawWpm: number;
   accuracy: number;
   combo: number;
+}
+
+export interface GhostProgress {
+  resultId: string;
+  charactersAhead: number;
+  ghostWpm: number;
 }
 
 export interface TypingFeedback {
@@ -89,4 +108,7 @@ export interface TestMetrics {
   totalKeystrokes: number;
   currentCombo: number;
   maxCombo: number;
+  backspaces: number;
+  correctionDependency: number;
+  errorRate: number;
 }

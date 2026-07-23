@@ -26,7 +26,13 @@ export function Slider({
   onCommit,
 }: SliderProps) {
   return (
-    <label className="slider-control" htmlFor={id} data-disabled={disabled}>
+    <label
+      className="slider-control"
+      htmlFor={id}
+      data-disabled={disabled}
+      data-selection-target="true"
+      data-selection-disabled={disabled}
+    >
       <span className="slider-heading">
         <strong>{label}</strong>
         <span>{valueLabel}</span>

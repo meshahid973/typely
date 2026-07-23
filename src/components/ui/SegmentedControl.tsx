@@ -12,7 +12,7 @@ interface SegmentedControlProps<T extends string | number> {
   options: SegmentedOption<T>[];
   disabled?: boolean;
   compact?: boolean;
-  onChange: (value: T) => void;
+  onChange: (value: T, origin: HTMLButtonElement) => void;
 }
 
 export function SegmentedControl<T extends string | number>({
@@ -35,8 +35,9 @@ export function SegmentedControl<T extends string | number>({
             key={option.value}
             className={cn("segmented-option", selected && "is-selected")}
             aria-pressed={selected}
+            data-selection-target="true"
             disabled={disabled || option.disabled}
-            onClick={() => onChange(option.value)}
+            onClick={(event) => onChange(option.value, event.currentTarget)}
           >
             {option.label}
           </button>

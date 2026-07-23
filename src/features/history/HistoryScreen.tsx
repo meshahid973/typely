@@ -107,6 +107,7 @@ export function HistoryScreen() {
                   <button
                     type="button"
                     className="history-score-open"
+                    data-selection-target="true"
                     onClick={() => setSelectedResult(result)}
                   >
                     <span className="history-grade">{result.grade}</span>

@@ -3,6 +3,7 @@ import { memo } from "react";
 import { IconButton } from "../../components/ui/IconButton";
 import type { TestConfiguration } from "../../core/typing/types";
 import { ModifiersPopover } from "../modifiers/ModifiersPopover";
+import { ChallengePicker } from "./ChallengePicker";
 import { ModePicker } from "./ModePicker";
 
 interface PracticeToolbarProps {
@@ -31,13 +32,19 @@ export const PracticeToolbar = memo(function PracticeToolbar({
         onChange={onConfigurationChange}
       />
       <span className="toolbar-divider" aria-hidden="true" />
+      <ChallengePicker
+        configuration={configuration}
+        disabled={disabled}
+        onChange={onConfigurationChange}
+      />
+      <span className="toolbar-divider" aria-hidden="true" />
       <ModifiersPopover
         configuration={configuration}
         disabled={disabled}
         onChange={onConfigurationChange}
       />
       <IconButton
-        label="Generate new words"
+        label={configuration.challengeId ? "Restart challenge" : "Generate new words"}
         className="refresh-button"
         disabled={disabled}
         onClick={onRefresh}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TestResult } from "../../app/app.types";
-import { calculateCadence } from "../../core/scoring/calculateConsistency";
+import { calculateCadence } from "../../core/scoring/performance";
+import type { TestFailureReason } from "../../core/scoring/types";
 import {
   calculateMetrics,
   calculateProgress,
@@ -8,6 +9,7 @@ import {
 } from "../../core/typing/metrics";
 import type {
   CadenceMetrics,
+  GhostProgress,
   PerformanceSample,
   TestConfiguration,
   TestStatus,
@@ -26,20 +28,23 @@ import {
   getTypingImpact,
 } from "../../core/typing/typingEvents";
 import { collectNewJudgements, finalizeLastWordJudgement } from "../../core/typing/wordJudgements";
+import { buildReplayFrames, getReplayFrame } from "../replay/replay";
 import { createTestResult } from "./createTestResult";
 import { emptyCadence, emptyFeedback } from "./testDefaults";
 import { useActiveTimer } from "./useActiveTimer";
 
 interface UseTypingTestOptions {
   configuration: TestConfiguration;
-  previousBestWpm: number;
+  previousBestResult: TestResult | null;
+  ghostResult: TestResult | null;
   previousBestCombo: number;
   onComplete: (result: TestResult) => void;
 }
 
 export function useTypingTest({
   configuration,
-  previousBestWpm,
+  previousBestResult,
+  ghostResult,
   previousBestCombo,
   onComplete,
 }: UseTypingTestOptions) {
@@ -70,10 +75,15 @@ export function useTypingTest({
   const judgedWordsRef = useRef(new Set<number>());
   const samplesRef = useRef<PerformanceSample[]>([]);
   const lastSampleAtRef = useRef(0);
+  const underPaceSinceRef = useRef<number | null>(null);
   const eventSequenceRef = useRef(1);
   const feedbackSequenceRef = useRef(0);
   const targetRef = useRef(target);
   const targetPositionsRef = useRef(createTargetPositions(target));
+  const ghostFrames = useMemo(
+    () => (ghostResult ? buildReplayFrames(ghostResult.typingEvents) : []),
+    [ghostResult],
+  );
 
   const changeStatus = useCallback((nextStatus: TestStatus) => {
     statusRef.current = nextStatus;
@@ -81,16 +91,15 @@ export function useTypingTest({
   }, []);
 
   const finishTest = useCallback(
-    (finalInput: string, finalElapsedMs: number) => {
-      if (statusRef.current === "complete") {
-        return;
-      }
+    (finalInput: string, finalElapsedMs: number, requestedFailure: TestFailureReason = null) => {
+      if (statusRef.current === "complete") return;
 
       const lastJudgement = finalizeLastWordJudgement(
         judgedWordsRef.current,
         finalInput,
         targetRef.current,
         eventsRef.current,
+        judgementsRef.current,
         finalElapsedMs,
       );
       const finalJudgements = lastJudgement
@@ -109,15 +118,21 @@ export function useTypingTest({
         eventsRef.current,
         statsRef.current,
       );
+      const accuracyFailure =
+        configuration.accuracyTarget !== null && metrics.accuracy < configuration.accuracyTarget
+          ? "accuracy-challenge"
+          : null;
+      const failureReason = requestedFailure ?? accuracyFailure;
       const result = createTestResult({
         configuration,
         elapsedMs: finalElapsedMs,
         events: [...eventsRef.current],
         judgements: finalJudgements,
         metrics,
-        previousBestWpm,
+        previousBestResult,
         samples: samplesRef.current,
         target: targetRef.current,
+        failureReason,
       });
 
       samplesRef.current = result.performanceSamples;
@@ -126,7 +141,7 @@ export function useTypingTest({
       setLastResult(result);
       onComplete(result);
     },
-    [changeStatus, configuration, onComplete, previousBestWpm],
+    [changeStatus, configuration, onComplete, previousBestResult],
   );
 
   const reset = useCallback(() => {
@@ -143,6 +158,7 @@ export function useTypingTest({
     judgedWordsRef.current = new Set<number>();
     samplesRef.current = [];
     lastSampleAtRef.current = 0;
+    underPaceSinceRef.current = null;
     eventSequenceRef.current = 1;
     feedbackSequenceRef.current = 0;
     targetRef.current = nextTarget;
@@ -165,41 +181,57 @@ export function useTypingTest({
   }, [reset]);
 
   useEffect(() => {
-    if (status !== "running") {
-      return;
-    }
+    if (status !== "running") return;
 
     const interval = window.setInterval(() => {
       const currentElapsedMs = getElapsed();
       setElapsedMs(currentElapsedMs);
 
+      const currentMetrics = calculateMetrics(
+        inputRef.current,
+        targetRef.current,
+        currentElapsedMs,
+        eventsRef.current,
+        statsRef.current,
+        true,
+      );
+
       if (currentElapsedMs - lastSampleAtRef.current >= 250) {
-        const currentMetrics = calculateMetrics(
-          inputRef.current,
-          targetRef.current,
-          currentElapsedMs,
-          eventsRef.current,
-          statsRef.current,
-          true,
-        );
         samplesRef.current.push(createPerformanceSample(currentElapsedMs, currentMetrics));
         lastSampleAtRef.current = currentElapsedMs;
       }
 
-      const timeLimitMs = configuration.value * 1000;
+      if (configuration.minimumPace !== null && currentElapsedMs >= 10000) {
+        if (currentMetrics.wpm < configuration.minimumPace) {
+          underPaceSinceRef.current ??= currentElapsedMs;
 
+          if (currentElapsedMs - underPaceSinceRef.current >= 3000) {
+            finishTest(inputRef.current, currentElapsedMs, "minimum-pace");
+            return;
+          }
+        } else {
+          underPaceSinceRef.current = null;
+        }
+      }
+
+      const timeLimitMs = configuration.value * 1000;
       if (configuration.mode === "time" && currentElapsedMs >= timeLimitMs) {
         finishTest(inputRef.current, timeLimitMs);
       }
     }, 100);
 
     return () => window.clearInterval(interval);
-  }, [configuration.mode, configuration.value, finishTest, getElapsed, status]);
+  }, [
+    configuration.minimumPace,
+    configuration.mode,
+    configuration.value,
+    finishTest,
+    getElapsed,
+    status,
+  ]);
 
   const pause = useCallback(() => {
-    if (statusRef.current !== "running") {
-      return;
-    }
+    if (statusRef.current !== "running") return;
 
     pauseTimer(performance.now());
     changeStatus("paused");
@@ -212,9 +244,7 @@ export function useTypingTest({
 
   const updateInput = useCallback(
     (nextValue: string) => {
-      if (statusRef.current === "complete") {
-        return emptyFeedback;
-      }
+      if (statusRef.current === "complete") return emptyFeedback;
 
       const limitedValue = nextValue.slice(0, targetRef.current.length);
       const previousInput = inputRef.current;
@@ -222,10 +252,7 @@ export function useTypingTest({
       if (configuration.noBackspace && limitedValue.length < previousInput.length) {
         return emptyFeedback;
       }
-
-      if (limitedValue === previousInput) {
-        return emptyFeedback;
-      }
+      if (limitedValue === previousInput) return emptyFeedback;
 
       const now = performance.now();
       const timeLimitMs = configuration.value * 1000;
@@ -265,19 +292,17 @@ export function useTypingTest({
         judgedWordsRef.current,
         newEvents,
         eventsRef.current,
+        judgementsRef.current,
         limitedValue,
         targetRef.current,
         activeTimestamp,
       );
 
       eventSequenceRef.current += newEvents.length;
-
       let correctedChanged = false;
 
       for (const event of newEvents) {
-        if (event.type === "restart" || event.type === "backspace") {
-          continue;
-        }
+        if (event.type === "restart" || event.type === "backspace") continue;
 
         if (!event.correct) {
           incorrectIndicesRef.current.add(event.targetIndex);
@@ -293,10 +318,7 @@ export function useTypingTest({
         }
       }
 
-      for (const judgement of newJudgements) {
-        judgedWordsRef.current.add(judgement.wordIndex);
-      }
-
+      for (const judgement of newJudgements) judgedWordsRef.current.add(judgement.wordIndex);
       judgementsRef.current.push(...newJudgements);
       const nextCadence = calculateCadence(eventsRef.current);
       const comboRecordTarget = Math.max(10, previousBestCombo + 1);
@@ -323,9 +345,17 @@ export function useTypingTest({
       setStats(eventResult.stats);
       setCadence(nextCadence);
       setFeedback(nextFeedback);
+      if (correctedChanged) setCorrectedIndices(new Set(correctedIndicesRef.current));
 
-      if (correctedChanged) {
-        setCorrectedIndices(new Set(correctedIndicesRef.current));
+      const suddenDeathFailure =
+        configuration.suddenDeath &&
+        newEvents.some(
+          (event) => event.type !== "backspace" && event.type !== "restart" && !event.correct,
+        );
+
+      if (suddenDeathFailure) {
+        finishTest(limitedValue, Math.max(1, getElapsed(now)), "sudden-death");
+        return nextFeedback;
       }
 
       if (configuration.mode === "words" && limitedValue.length >= targetRef.current.length) {
@@ -338,6 +368,7 @@ export function useTypingTest({
       changeStatus,
       configuration.mode,
       configuration.noBackspace,
+      configuration.suddenDeath,
       configuration.value,
       finishTest,
       getElapsed,
@@ -364,6 +395,20 @@ export function useTypingTest({
     () => calculateProgress(configuration, input.length, target.length, elapsedMs),
     [configuration, elapsedMs, input.length, target.length],
   );
+  const ghostProgress = useMemo<GhostProgress | null>(() => {
+    if (!configuration.ghostRace || !ghostResult || ghostFrames.length === 0) return null;
+
+    const ghostFrame = getReplayFrame(ghostFrames, elapsedMs);
+    const ghostSample = [...ghostResult.performanceSamples]
+      .reverse()
+      .find((sample) => sample.elapsedMs <= elapsedMs);
+
+    return {
+      resultId: ghostResult.id,
+      charactersAhead: input.length - ghostFrame.input.length,
+      ghostWpm: ghostSample?.wpm ?? 0,
+    };
+  }, [configuration.ghostRace, elapsedMs, ghostFrames, ghostResult, input.length]);
 
   return {
     target,
@@ -375,6 +420,7 @@ export function useTypingTest({
     correctedIndices,
     cadence,
     feedback,
+    ghostProgress,
     lastResult,
     updateInput,
     reset,

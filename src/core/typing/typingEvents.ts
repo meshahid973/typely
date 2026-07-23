@@ -15,10 +15,7 @@ function commonPrefixLength(previousInput: string, nextInput: string) {
   const limit = Math.min(previousInput.length, nextInput.length);
   let index = 0;
 
-  while (index < limit && previousInput[index] === nextInput[index]) {
-    index += 1;
-  }
-
+  while (index < limit && previousInput[index] === nextInput[index]) index += 1;
   return index;
 }
 
@@ -30,12 +27,7 @@ export function createTargetPositions(target: string) {
   for (let index = 0; index < target.length; index += 1) {
     const expectedCharacter = target[index];
 
-    positions.push({
-      index,
-      wordIndex,
-      characterIndex,
-      expectedCharacter,
-    });
+    positions.push({ index, wordIndex, characterIndex, expectedCharacter });
 
     if (expectedCharacter === " ") {
       wordIndex += 1;
@@ -122,17 +114,16 @@ export function createTypingEvents({
 }
 
 export function applyTypingEvents(current: TypingSessionStats, events: TypingEvent[]) {
-  const next = { ...current };
+  let next = { ...current };
   let comboMilestone: number | null = null;
   let comboBreak: number | null = null;
 
   for (const event of events) {
     if (event.type === "restart") {
-      return {
-        stats: { ...emptyTypingSessionStats },
-        comboMilestone,
-        comboBreak,
-      };
+      next = { ...emptyTypingSessionStats };
+      comboMilestone = null;
+      comboBreak = null;
+      continue;
     }
 
     if (event.type === "backspace") {
@@ -156,10 +147,10 @@ export function applyTypingEvents(current: TypingSessionStats, events: TypingEve
       next.maxCombo = Math.max(next.maxCombo, next.currentCombo);
 
       if (
-        next.currentCombo === 25 ||
         next.currentCombo === 50 ||
         next.currentCombo === 100 ||
-        (next.currentCombo > 100 && next.currentCombo % 100 === 0)
+        next.currentCombo === 250 ||
+        (next.currentCombo > 250 && next.currentCombo % 250 === 0)
       ) {
         comboMilestone = next.currentCombo;
       }
@@ -167,20 +158,17 @@ export function applyTypingEvents(current: TypingSessionStats, events: TypingEve
       next.currentIncorrectCharacters += 1;
       next.incorrectKeystrokes += 1;
 
-      if (next.currentCombo >= 10) {
-        comboBreak = next.currentCombo;
-      }
-
+      if (next.currentCombo >= 10) comboBreak = next.currentCombo;
       next.currentCombo = 0;
     }
   }
 
+  next.totalKeystrokes = next.correctKeystrokes + next.incorrectKeystrokes;
   return { stats: next, comboMilestone, comboBreak };
 }
 
 export function getTypingImpact(events: TypingEvent[]): TypingFeedback["impact"] {
   const lastEvent = events.at(-1);
-
   if (!lastEvent) return "none";
   if (lastEvent.type === "backspace") return "backspace";
   return lastEvent.correct ? "correct" : "incorrect";
@@ -191,18 +179,14 @@ export function getCorrectedIndices(events: TypingEvent[]) {
   const correctedIndices = new Set<number>();
 
   for (const event of events) {
-    if (event.type === "restart" || event.type === "backspace") {
-      continue;
-    }
+    if (event.type === "restart" || event.type === "backspace") continue;
 
     if (!event.correct) {
       incorrectIndices.add(event.targetIndex);
       continue;
     }
 
-    if (incorrectIndices.has(event.targetIndex)) {
-      correctedIndices.add(event.targetIndex);
-    }
+    if (incorrectIndices.has(event.targetIndex)) correctedIndices.add(event.targetIndex);
   }
 
   return correctedIndices;

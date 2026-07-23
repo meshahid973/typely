@@ -8,7 +8,7 @@ interface HistoryFiltersProps {
   onChange: (filters: HistoryFilterState) => void;
 }
 
-const grades: Array<Grade | "all"> = ["all", "SS", "S", "A", "B", "C", "D"];
+const grades: Array<Grade | "all"> = ["all", "SS+", "SS", "S", "A", "B", "C", "D"];
 
 export function HistoryFilters({ filters, onChange }: HistoryFiltersProps) {
   return (

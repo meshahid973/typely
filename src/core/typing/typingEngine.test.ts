@@ -24,7 +24,6 @@ function events(previousInput: string, nextInput: string, sequenceStart = 1) {
 describe("typing events", () => {
   it("creates character events with stable positions", () => {
     const created = events("", "he");
-
     expect(created).toHaveLength(2);
     expect(created[0]).toMatchObject({
       id: "event-1",
@@ -38,7 +37,6 @@ describe("typing events", () => {
   it("records backspace without independently resetting combo", () => {
     const entered = applyTypingEvents(emptyTypingSessionStats, events("", "hel"));
     const deleted = applyTypingEvents(entered.stats, events("hel", "he", 4));
-
     expect(deleted.stats.backspaces).toBe(1);
     expect(deleted.stats.currentCorrectCharacters).toBe(2);
     expect(deleted.stats.currentIncorrectCharacters).toBe(0);
@@ -47,9 +45,7 @@ describe("typing events", () => {
   });
 
   it("resets combo after an incorrect character", () => {
-    const created = events("", "hex");
-    const result = applyTypingEvents(emptyTypingSessionStats, created);
-
+    const result = applyTypingEvents(emptyTypingSessionStats, events("", "hex"));
     expect(result.stats.currentCorrectCharacters).toBe(2);
     expect(result.stats.currentIncorrectCharacters).toBe(1);
     expect(result.stats.correctKeystrokes).toBe(2);
@@ -69,7 +65,6 @@ describe("typing events", () => {
       sequenceStart: 1,
     });
     const result = applyTypingEvents(emptyTypingSessionStats, burst);
-
     expect(burst).toHaveLength(500);
     expect(result.stats.correctKeystrokes).toBe(500);
     expect(result.stats.maxCombo).toBe(500);
@@ -84,10 +79,58 @@ describe("createTarget", () => {
       punctuation: false,
       numbers: false,
       capitals: false,
+      symbols: false,
       noBackspace: false,
       hidden: false,
+      focusMode: false,
+      noLiveWpm: false,
+      suddenDeath: false,
+      accuracyTarget: null,
+      minimumPace: null,
+      challengeId: null,
+      ghostRace: false,
+    });
+    expect(created.split(" ")).toHaveLength(25);
+  });
+
+  it("returns stable curated challenge text", () => {
+    const created = createTarget({
+      mode: "words",
+      value: 25,
+      punctuation: false,
+      numbers: false,
+      capitals: false,
+      symbols: false,
+      noBackspace: false,
+      hidden: false,
+      focusMode: false,
+      noLiveWpm: false,
+      suddenDeath: false,
+      accuracyTarget: null,
+      minimumPace: null,
+      challengeId: "technical-console",
+      ghostRace: false,
     });
 
-    expect(created.split(" ")).toHaveLength(25);
+    expect(created).toContain("retryCount");
+    expect(
+      createTarget({
+        mode: "words",
+        value: 25,
+        punctuation: false,
+        numbers: false,
+        capitals: false,
+        symbols: false,
+        noBackspace: false,
+        hidden: false,
+        focusMode: false,
+        noLiveWpm: false,
+        suddenDeath: false,
+        accuracyTarget: null,
+        minimumPace: null,
+        challengeId: "technical-console",
+        ghostRace: false,
+      }),
+    ).toBe(created);
   });
 });

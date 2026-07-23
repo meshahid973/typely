@@ -16,6 +16,7 @@ export const GameButton = forwardRef<HTMLButtonElement, PropsWithChildren<GameBu
         ref={ref}
         type={type}
         className={cn("game-button", `game-button-${variant}`, `game-button-${size}`, className)}
+        data-selection-target="true"
         {...props}
       >
         <span className="game-button-accent" aria-hidden="true" />

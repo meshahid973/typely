@@ -2,9 +2,10 @@ import { AlertCircle, Clock3, Gauge, Sparkles, Target, Trophy } from "lucide-rea
 import { useMemo } from "react";
 import type { TestResult } from "../../app/app.types";
 import { Drawer } from "../../components/ui/Drawer";
-import { countJudgements } from "../../core/scoring/calculateScore";
+import { countJudgements } from "../../core/scoring/performance";
 import { formatDate, formatDuration, formatNumber } from "../../utils/format";
 import { ReplayPlayer } from "../replay/ReplayPlayer";
+import { ResultAnalysis } from "../results/ResultAnalysis";
 import { hasModifiers } from "./historyFilterUtils";
 
 interface HistoryDetailsDrawerProps {
@@ -13,13 +14,25 @@ interface HistoryDetailsDrawerProps {
 }
 
 function activeModifiers(result: TestResult) {
+  const configuration = result.configuration;
   const modifiers: string[] = [];
 
-  if (result.configuration.punctuation) modifiers.push("Punctuation");
-  if (result.configuration.numbers) modifiers.push("Numbers");
-  if (result.configuration.capitals) modifiers.push("Capitals");
-  if (result.configuration.noBackspace) modifiers.push("No backspace");
-  if (result.configuration.hidden) modifiers.push("Hidden");
+  if (configuration.punctuation) modifiers.push("Punctuation");
+  if (configuration.numbers) modifiers.push("Numbers");
+  if (configuration.capitals) modifiers.push("Capitals");
+  if (configuration.symbols) modifiers.push("Symbols");
+  if (configuration.noBackspace) modifiers.push("No backspace");
+  if (configuration.hidden) modifiers.push("Blind words");
+  if (configuration.focusMode) modifiers.push("Focus");
+  if (configuration.noLiveWpm) modifiers.push("No live stats");
+  if (configuration.suddenDeath) modifiers.push("Sudden death");
+  if (configuration.accuracyTarget !== null) {
+    modifiers.push(`${configuration.accuracyTarget}% accuracy`);
+  }
+  if (configuration.minimumPace !== null)
+    modifiers.push(`${configuration.minimumPace} minimum WPM`);
+  if (configuration.ghostRace) modifiers.push("Ghost race");
+  if (configuration.challengeId) modifiers.push("Curated challenge");
 
   return modifiers;
 }
@@ -48,11 +61,12 @@ export function HistoryDetailsDrawer({ result, onClose }: HistoryDetailsDrawerPr
             </div>
             <div>
               <span>
-                {result.modeValue} {result.mode === "time" ? "seconds" : "words"}
+                {result.modeValue} {result.mode === "time" ? "seconds" : "words"} ·{" "}
+                {result.difficulty.stars.toFixed(1)}★
               </span>
               <strong>{result.wpm} wpm</strong>
               <small>
-                {result.accuracy}% accuracy · {formatNumber(result.score)} score
+                {result.accuracy}% accuracy · {formatNumber(result.performanceRating)} TP
               </small>
             </div>
           </section>
@@ -91,12 +105,13 @@ export function HistoryDetailsDrawer({ result, onClose }: HistoryDetailsDrawerPr
           </section>
 
           <ReplayPlayer key={result.id} result={result} />
+          <ResultAnalysis result={result} />
 
           <section className="history-detail-judgements" aria-labelledby="judgements-heading">
             <header>
               <div>
                 <h3 id="judgements-heading">Word judgements</h3>
-                <p>How cleanly each completed word was entered.</p>
+                <p>How cleanly and confidently each word was entered.</p>
               </div>
             </header>
             <div>
@@ -104,10 +119,13 @@ export function HistoryDetailsDrawer({ result, onClose }: HistoryDetailsDrawerPr
                 <strong>{judgementCounts.perfect}</strong> perfect
               </span>
               <span>
-                <strong>{judgementCounts.great}</strong> great
+                <strong>{judgementCounts.clean}</strong> clean
               </span>
               <span>
-                <strong>{judgementCounts.good}</strong> good
+                <strong>{judgementCounts.recovered}</strong> recovered
+              </span>
+              <span>
+                <strong>{judgementCounts.burst}</strong> burst
               </span>
               <span>
                 <strong>{judgementCounts.miss}</strong> miss

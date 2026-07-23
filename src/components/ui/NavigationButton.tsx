@@ -19,6 +19,7 @@ export function NavigationButton({
       type={type}
       className={cn("navigation-button", active && "is-active", className)}
       aria-current={current ? "page" : undefined}
+      data-selection-target="true"
       {...props}
     >
       <span className="navigation-button-marker" aria-hidden="true" />

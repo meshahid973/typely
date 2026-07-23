@@ -1,6 +1,7 @@
 import { BarChart3, History, Keyboard, type LucideIcon, Settings } from "lucide-react";
 import { useApp } from "../../app/AppProvider";
 import type { AppView } from "../../app/app.types";
+import { closeSharedElement, openSharedElement } from "../../utils/motion";
 import { NavigationButton } from "../ui/NavigationButton";
 
 interface NavigationItem {
@@ -19,7 +20,7 @@ export function AppNavigation() {
   const { view, setView, settingsOpen, profileOpen, openSettings, closeSettings } = useApp();
 
   return (
-    <nav className="app-navigation" aria-label="Main navigation">
+    <nav className="app-navigation" aria-label="Main navigation" data-active-view={view}>
       {navigation.map((item) => {
         const Icon = item.icon;
 
@@ -43,9 +44,17 @@ export function AppNavigation() {
         title="Settings"
         aria-haspopup="dialog"
         aria-expanded={settingsOpen}
-        onClick={settingsOpen ? closeSettings : openSettings}
+        onClick={() => {
+          if (settingsOpen) {
+            closeSharedElement("settings", closeSettings);
+          } else {
+            openSharedElement("settings", openSettings);
+          }
+        }}
       >
-        <Settings size={15} strokeWidth={2} />
+        <span className="settings-shared-source" data-shared-source="settings">
+          <Settings size={15} strokeWidth={2} />
+        </span>
         <span>Settings</span>
       </NavigationButton>
     </nav>

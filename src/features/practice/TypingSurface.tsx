@@ -19,11 +19,20 @@ import type {
   TypingFeedback,
 } from "../../core/typing/types";
 import { cn } from "../../utils/cn";
-import { TypingText } from "./TypingText";
-import { createTypingWords } from "./typingTextTypes";
 import { useTypingCaret } from "./useTypingCaret";
 import { useTypingFeedbackEffects } from "./useTypingFeedbackEffects";
 import { useTypingTextState } from "./useTypingTextState";
+
+interface CharacterUnit {
+  id: string;
+  value: string;
+  index: number;
+}
+
+interface TypingWordUnit {
+  id: string;
+  characters: CharacterUnit[];
+}
 
 interface TypingSurfaceProps {
   target: string;
@@ -37,6 +46,49 @@ interface TypingSurfaceProps {
   onInput: (value: string) => TypingFeedback;
   onReset: () => void;
 }
+
+function createTypingWords(target: string) {
+  let cursor = 0;
+  const sourceWords = target.split(" ");
+
+  return sourceWords.map((word, wordPosition) => {
+    const start = cursor;
+    const characters = Array.from(word, (value) => {
+      const unit: CharacterUnit = {
+        id: `${cursor}-${value.codePointAt(0) ?? 0}`,
+        value,
+        index: cursor,
+      };
+
+      cursor += value.length;
+      return unit;
+    });
+
+    if (wordPosition < sourceWords.length - 1) {
+      characters.push({ id: `${cursor}-32`, value: " ", index: cursor });
+      cursor += 1;
+    }
+
+    return { id: `${start}-${word}`, characters } satisfies TypingWordUnit;
+  });
+}
+
+const TypingText = memo(function TypingText({ words }: { words: TypingWordUnit[] }) {
+  return words.map((word) => (
+    <span className="typing-word" data-word-index={word.id.split("-")[0]} key={word.id}>
+      {word.characters.map((unit) => (
+        <span
+          className="typing-character is-pending"
+          data-state="pending"
+          data-typing-index={unit.index}
+          key={unit.id}
+        >
+          {unit.value}
+        </span>
+      ))}
+    </span>
+  ));
+});
 
 export const TypingSurface = memo(function TypingSurface({
   target,
@@ -97,9 +149,7 @@ export const TypingSurface = memo(function TypingSurface({
   useLayoutEffect(() => {
     const element = inputElement.current;
 
-    if (!element || element.value === input) {
-      return;
-    }
+    if (!element || element.value === input) return;
 
     element.value = input;
     element.setSelectionRange(input.length, input.length);
@@ -108,9 +158,7 @@ export const TypingSurface = memo(function TypingSurface({
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const nextValue = event.target.value.replace(/[\r\n]/g, "");
 
-    if (nextValue !== event.target.value) {
-      event.target.value = nextValue;
-    }
+    if (nextValue !== event.target.value) event.target.value = nextValue;
 
     const nextFeedback = onInput(nextValue);
 
@@ -156,9 +204,7 @@ export const TypingSurface = memo(function TypingSurface({
   const keepSelectionAtEnd = () => {
     const element = inputElement.current;
 
-    if (!element) {
-      return;
-    }
+    if (!element) return;
 
     const end = element.value.length;
 
@@ -181,8 +227,9 @@ export const TypingSurface = memo(function TypingSurface({
     status !== "complete";
   const showTrail =
     settings.cadenceEffects &&
+    settings.trailIntensity !== "off" &&
     !settings.reducedMotion &&
-    cadence.speed > 0.94 &&
+    cadence.speed > (settings.trailIntensity === "full" ? 0.78 : 0.94) &&
     status === "running";
 
   return (
@@ -192,6 +239,9 @@ export const TypingSurface = memo(function TypingSurface({
       data-status={status}
       data-stage-phase={stagePhase}
       data-hidden-mod={configuration.hidden}
+      data-focus-mode={configuration.focusMode || settings.textFocusStyle === "spotlight"}
+      data-text-focus={settings.textFocusStyle}
+      data-trail-intensity={settings.trailIntensity}
       data-impact={feedback.impact}
       data-show-trail={showTrail}
       aria-label="Typing area"
@@ -228,6 +278,7 @@ export const TypingSurface = memo(function TypingSurface({
         </div>
         <span className="typing-caret-trail" />
         <span ref={caretElement} className="typing-caret" />
+        <span className="typing-result-baseline" />
         {showJudgement && (
           <span
             key={visibleJudgement.id}

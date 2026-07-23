@@ -3,7 +3,7 @@ import { normalizeSettings } from "./appSettings";
 import { normalizeProfile } from "./playerProfile";
 import { normalizeResults } from "./resultHistory";
 
-export const appDataVersion = 3;
+export const appDataVersion = 4;
 
 export interface AppDataBackup {
   version: number;

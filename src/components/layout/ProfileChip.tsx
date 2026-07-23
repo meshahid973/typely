@@ -1,6 +1,7 @@
 import { type CSSProperties, useMemo } from "react";
 import { useApp } from "../../app/AppProvider";
 import { calculatePlayerLevel } from "../../features/progression/progression";
+import { closeSharedElement, openSharedElement } from "../../utils/motion";
 
 export function ProfileChip() {
   const { profile, profileOpen, openProfile, closeProfile } = useApp();
@@ -12,18 +13,31 @@ export function ProfileChip() {
       type="button"
       className="profile-chip"
       data-avatar={profile.avatarStyle}
+      data-selection-target="true"
       style={{ "--profile-progress": playerLevel.progress } as CSSProperties}
       aria-label={`${profileOpen ? "Close" : "Open"} ${profile.name}'s profile`}
       aria-haspopup="dialog"
       aria-expanded={profileOpen}
-      onClick={profileOpen ? closeProfile : openProfile}
+      onClick={() => {
+        if (profileOpen) {
+          closeSharedElement("profile", closeProfile);
+        } else {
+          openSharedElement("profile", openProfile);
+        }
+      }}
     >
-      <span className="profile-chip-avatar" aria-hidden="true">
-        {initial}
-      </span>
-      <span className="profile-chip-copy">
-        <strong>{profile.name}</strong>
-        <small>level {playerLevel.level}</small>
+      <span
+        className="profile-chip-shared"
+        data-avatar={profile.avatarStyle}
+        data-shared-source="profile"
+      >
+        <span className="profile-chip-avatar" aria-hidden="true">
+          {initial}
+        </span>
+        <span className="profile-chip-copy">
+          <strong>{profile.name}</strong>
+          <small>level {playerLevel.level}</small>
+        </span>
       </span>
       <span className="profile-chip-xp" aria-hidden="true">
         <span>

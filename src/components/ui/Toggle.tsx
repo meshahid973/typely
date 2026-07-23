@@ -20,7 +20,14 @@ export function Toggle({
   compact = false,
 }: ToggleProps) {
   return (
-    <label className="toggle-row" htmlFor={id} data-disabled={disabled} data-compact={compact}>
+    <label
+      className="toggle-row"
+      htmlFor={id}
+      data-disabled={disabled}
+      data-compact={compact}
+      data-selection-target="true"
+      data-selection-disabled={disabled}
+    >
       <span className="toggle-copy">
         <strong>{label}</strong>
         {description && <small>{description}</small>}

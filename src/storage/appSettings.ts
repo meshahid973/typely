@@ -14,6 +14,10 @@ export const defaultSettings: AppSettings = {
   judgementsEnabled: true,
   cadenceEffects: true,
   highContrast: false,
+  textFocusStyle: "standard",
+  trailIntensity: "subtle",
+  resultMotion: "full",
+  backgroundTreatment: "plain",
 };
 
 export interface StoredSettings extends Partial<AppSettings> {
@@ -34,10 +38,7 @@ function readBoolean(value: unknown, fallback: boolean) {
 }
 
 function readVolume(value: unknown, fallback: number) {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return fallback;
-  }
-
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.max(0, Math.min(1, value));
 }
 
@@ -53,7 +54,10 @@ export function normalizeSettings(value: StoredSettings | unknown): AppSettings 
         : "pink",
     reducedMotion: readBoolean(stored.reducedMotion, defaultSettings.reducedMotion),
     liveStats: readBoolean(stored.liveStats, defaultSettings.liveStats),
-    caretStyle: stored.caretStyle === "block" ? "block" : "bar",
+    caretStyle:
+      stored.caretStyle === "block" || stored.caretStyle === "underline"
+        ? stored.caretStyle
+        : "bar",
     soundEnabled: readBoolean(stored.soundEnabled, defaultSettings.soundEnabled),
     soundPack: soundPackIds.includes(stored.soundPack as SoundPackId)
       ? (stored.soundPack as SoundPackId)
@@ -66,5 +70,18 @@ export function normalizeSettings(value: StoredSettings | unknown): AppSettings 
     judgementsEnabled: readBoolean(stored.judgementsEnabled, defaultSettings.judgementsEnabled),
     cadenceEffects: readBoolean(stored.cadenceEffects, defaultSettings.cadenceEffects),
     highContrast: readBoolean(stored.highContrast, defaultSettings.highContrast),
+    textFocusStyle:
+      stored.textFocusStyle === "fade-complete" || stored.textFocusStyle === "spotlight"
+        ? stored.textFocusStyle
+        : "standard",
+    trailIntensity:
+      stored.trailIntensity === "off" || stored.trailIntensity === "full"
+        ? stored.trailIntensity
+        : "subtle",
+    resultMotion: stored.resultMotion === "calm" ? "calm" : "full",
+    backgroundTreatment:
+      stored.backgroundTreatment === "paper" || stored.backgroundTreatment === "glass"
+        ? stored.backgroundTreatment
+        : "plain",
   };
 }

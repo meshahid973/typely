@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { PressFeedback } from "../components/feedback/PressFeedback";
+import { PressFeedback, SelectionBracket } from "../components/feedback/PressFeedback";
 import { Titlebar } from "../components/layout/Titlebar";
 import { ProfileDrawer } from "../features/progression/ProfileDrawer";
 import { SettingsDrawer } from "../features/settings/SettingsDrawer";
@@ -13,6 +13,7 @@ export function AppShell({ children }: PropsWithChildren) {
   return (
     <div className="app-window" data-overlay-open={overlayOpen}>
       <PressFeedback />
+      <SelectionBracket />
       <Titlebar />
       <UpdateBanner />
       <main className="app-content">{children}</main>

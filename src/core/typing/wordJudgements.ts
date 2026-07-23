@@ -22,20 +22,84 @@ export function createWordRanges(target: string) {
   return ranges;
 }
 
-function judgementType(mistakeCount: number, correct: boolean): WordJudgementType {
-  if (!correct) {
-    return "miss";
-  }
+function median(values: number[]) {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
+}
 
-  if (mistakeCount === 0) {
-    return "perfect";
-  }
+function wordEventMetrics(wordIndex: number, events: TypingEvent[], timestamp: number) {
+  const wordEvents = events.filter(
+    (event) => event.wordIndex === wordIndex && event.type !== "restart",
+  );
+  const entryEvents = wordEvents.filter(
+    (event) => event.type === "character" || event.type === "space",
+  );
+  const backspaceCount = wordEvents.filter((event) => event.type === "backspace").length;
+  const mistakeCount = entryEvents.filter((event) => !event.correct).length;
+  const firstTimestamp = entryEvents[0]?.timestamp ?? timestamp;
+  const durationMs = Math.max(1, timestamp - firstTimestamp);
+  const intervals = entryEvents.slice(1).map((event, index) => {
+    return Math.max(1, event.timestamp - entryEvents[index].timestamp);
+  });
+  const averageIntervalMs =
+    intervals.length === 0
+      ? durationMs
+      : intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+  const hesitationThreshold = Math.max(320, averageIntervalMs * 1.75);
+  const hesitationCount = intervals.filter((interval) => interval > hesitationThreshold).length;
+  const variance =
+    intervals.length === 0
+      ? 0
+      : intervals.reduce((sum, interval) => sum + (interval - averageIntervalMs) ** 2, 0) /
+        intervals.length;
+  const deviation = Math.sqrt(variance);
+  const intervalConsistency =
+    averageIntervalMs <= 0 ? 1 : Math.max(0, Math.min(1, 1 - deviation / averageIntervalMs));
 
-  if (mistakeCount === 1) {
-    return "great";
-  }
+  return {
+    entryEvents,
+    backspaceCount,
+    mistakeCount,
+    durationMs,
+    averageIntervalMs,
+    hesitationCount,
+    intervalConsistency,
+  };
+}
 
-  return "good";
+function judgementType(options: {
+  correct: boolean;
+  mistakeCount: number;
+  backspaceCount: number;
+  hesitationCount: number;
+  intervalConsistency: number;
+  wordWpm: number;
+  previousJudgements: WordJudgement[];
+}): WordJudgementType {
+  const {
+    correct,
+    mistakeCount,
+    backspaceCount,
+    hesitationCount,
+    intervalConsistency,
+    wordWpm,
+    previousJudgements,
+  } = options;
+
+  if (!correct) return "miss";
+  if (mistakeCount > 0 || backspaceCount > 0) return "recovered";
+
+  const recentWpms = previousJudgements
+    .filter((judgement) => judgement.type !== "miss" && judgement.wpm > 0)
+    .slice(-8)
+    .map((judgement) => judgement.wpm);
+  const baseline = median(recentWpms);
+
+  if (recentWpms.length >= 3 && wordWpm >= Math.max(80, baseline * 1.22)) return "burst";
+  if (hesitationCount === 0 && intervalConsistency >= 0.72) return "perfect";
+  return "clean";
 }
 
 export function judgeWord(
@@ -43,30 +107,38 @@ export function judgeWord(
   input: string,
   target: string,
   events: TypingEvent[],
+  previousJudgements: WordJudgement[],
   timestamp: number,
 ): WordJudgement | null {
   const range = createWordRanges(target)[wordIndex];
-
-  if (!range) {
-    return null;
-  }
+  if (!range) return null;
 
   const expectedWord = target.slice(range.start, range.end);
   const enteredWord = input.slice(range.start, range.end);
-  const mistakeCount = events.filter(
-    (event) =>
-      event.wordIndex === wordIndex &&
-      event.type !== "backspace" &&
-      event.type !== "restart" &&
-      !event.correct,
-  ).length;
+  const metrics = wordEventMetrics(wordIndex, events, timestamp);
+  const wordWpm = Math.min(
+    300,
+    Math.max(0, Math.round(expectedWord.length / 5 / (metrics.durationMs / 60000) || 0)),
+  );
 
   return {
     id: `judgement-${wordIndex}-${Math.round(timestamp)}`,
     timestamp,
     wordIndex,
-    type: judgementType(mistakeCount, enteredWord === expectedWord),
-    mistakeCount,
+    type: judgementType({
+      correct: enteredWord === expectedWord,
+      mistakeCount: metrics.mistakeCount,
+      backspaceCount: metrics.backspaceCount,
+      hesitationCount: metrics.hesitationCount,
+      intervalConsistency: metrics.intervalConsistency,
+      wordWpm,
+      previousJudgements,
+    }),
+    mistakeCount: metrics.mistakeCount,
+    backspaceCount: metrics.backspaceCount,
+    durationMs: Math.round(metrics.durationMs),
+    averageIntervalMs: Math.round(metrics.averageIntervalMs),
+    wpm: wordWpm,
   };
 }
 
@@ -74,6 +146,7 @@ export function collectNewJudgements(
   previousJudgedWords: ReadonlySet<number>,
   newEvents: TypingEvent[],
   allEvents: TypingEvent[],
+  previousJudgements: WordJudgement[],
   input: string,
   target: string,
   timestamp: number,
@@ -86,9 +159,19 @@ export function collectNewJudgements(
     }
   }
 
-  const judgements = Array.from(completedWords)
-    .map((wordIndex) => judgeWord(wordIndex, input, target, allEvents, timestamp))
-    .filter((value): value is WordJudgement => value !== null);
+  const judgements: WordJudgement[] = [];
+
+  for (const wordIndex of completedWords) {
+    const judgement = judgeWord(
+      wordIndex,
+      input,
+      target,
+      allEvents,
+      [...previousJudgements, ...judgements],
+      timestamp,
+    );
+    if (judgement) judgements.push(judgement);
+  }
 
   return judgements;
 }
@@ -98,20 +181,16 @@ export function finalizeLastWordJudgement(
   input: string,
   target: string,
   events: TypingEvent[],
+  previousJudgements: WordJudgement[],
   timestamp: number,
 ) {
   const ranges = createWordRanges(target);
   const finalWordIndex = ranges.length - 1;
 
-  if (finalWordIndex < 0 || judgedWords.has(finalWordIndex)) {
-    return null;
-  }
+  if (finalWordIndex < 0 || judgedWords.has(finalWordIndex)) return null;
 
   const finalRange = ranges[finalWordIndex];
+  if (input.length < finalRange.end) return null;
 
-  if (input.length < finalRange.end) {
-    return null;
-  }
-
-  return judgeWord(finalWordIndex, input, target, events, timestamp);
+  return judgeWord(finalWordIndex, input, target, events, previousJudgements, timestamp);
 }

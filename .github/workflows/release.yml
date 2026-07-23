@@ -16,6 +16,8 @@ jobs:
   windows:
     runs-on: windows-latest
     timeout-minutes: 35
+    env:
+      VITE_TYPELY_API_URL: https://typely-api.coderpixelbusiness.workers.dev
 
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +66,17 @@ jobs:
             throw "Tag $tagVersion does not match Cargo.toml $cargoVersion."
           }
 
+      - name: Verify account server configuration
+        shell: pwsh
+        run: |
+          $expected = "https://typely-api.coderpixelbusiness.workers.dev"
+
+          if ($env:VITE_TYPELY_API_URL -ne $expected) {
+            throw "The release account server URL is missing or incorrect."
+          }
+
+          Write-Host "Release account server: $env:VITE_TYPELY_API_URL"
+
       - name: Verify frontend
         run: pnpm check
 
@@ -76,6 +89,21 @@ jobs:
 
       - name: Build Windows installer
         run: pnpm tauri build --bundles nsis
+
+      - name: Verify account server was embedded
+        shell: pwsh
+        run: |
+          $expected = "typely-api.coderpixelbusiness.workers.dev"
+          $bundles = Get-ChildItem -Path dist -Recurse -File -ErrorAction Stop
+          $match = Select-String `
+            -Path $bundles.FullName `
+            -Pattern $expected `
+            -SimpleMatch `
+            -List
+
+          if (-not $match) {
+            throw "The compiled frontend does not contain the Typely account server URL."
+          }
 
       - name: Publish GitHub release
         shell: pwsh

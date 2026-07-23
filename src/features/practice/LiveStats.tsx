@@ -3,6 +3,7 @@ import { AnimatedValue } from "../../components/ui/AnimatedValue";
 import { ProgressLine } from "../../components/ui/ProgressLine";
 import type {
   CadenceMetrics,
+  GhostProgress,
   TestConfiguration,
   TestMetrics,
   TestStatus,
@@ -19,6 +20,7 @@ interface LiveStatsProps {
   status: TestStatus;
   showLiveStats: boolean;
   cadence: CadenceMetrics;
+  ghostProgress: GhostProgress | null;
   feedback: TypingFeedback;
   reducedMotion: boolean;
 }
@@ -36,16 +38,13 @@ function getComboMessage(feedback: TypingFeedback, combo: number) {
   if (feedback.comboRecord) {
     return { value: `${feedback.comboRecord}×`, label: "new best", kind: "record" };
   }
-
   if (feedback.comboMilestone) {
-    const label = feedback.comboMilestone >= 100 ? "locked in" : "steady";
+    const label = feedback.comboMilestone >= 250 ? "locked in" : "steady";
     return { value: `${feedback.comboMilestone}×`, label, kind: "milestone" };
   }
-
   if (feedback.comboBreak) {
     return { value: `${feedback.comboBreak}×`, label: "combo lost", kind: "break" };
   }
-
   return { value: `${combo}×`, label: "combo", kind: "normal" };
 }
 
@@ -57,6 +56,7 @@ export function LiveStats({
   status,
   showLiveStats,
   cadence,
+  ghostProgress,
   feedback,
   reducedMotion,
 }: LiveStatsProps) {
@@ -76,15 +76,9 @@ export function LiveStats({
 
   useEffect(() => {
     const element = comboRef.current;
+    if (!element || reducedMotion || (!feedback.comboMilestone && !feedback.comboRecord)) return;
 
-    if (!element || reducedMotion || (!feedback.comboMilestone && !feedback.comboRecord)) {
-      return;
-    }
-
-    for (const animation of element.getAnimations()) {
-      animation.cancel();
-    }
-
+    for (const animation of element.getAnimations()) animation.cancel();
     element.animate(
       [
         { transform: "translateY(0) scale(1)" },
@@ -97,6 +91,14 @@ export function LiveStats({
       },
     );
   }, [feedback.comboMilestone, feedback.comboRecord, reducedMotion]);
+
+  const ghostLabel = ghostProgress
+    ? ghostProgress.charactersAhead === 0
+      ? "even with ghost"
+      : ghostProgress.charactersAhead > 0
+        ? `${ghostProgress.charactersAhead} chars ahead`
+        : `${Math.abs(ghostProgress.charactersAhead)} chars behind`
+    : null;
 
   return (
     <section
@@ -124,6 +126,12 @@ export function LiveStats({
         </div>
       </div>
       <ProgressLine value={progress} energy={cadence.energy} impactSequence={feedback.sequence} />
+      {ghostProgress && showLiveStats && status === "running" && (
+        <div className="ghost-race-ribbon" data-leading={ghostProgress.charactersAhead >= 0}>
+          <span>{ghostLabel}</span>
+          <strong>{ghostProgress.ghostWpm} ghost wpm</strong>
+        </div>
+      )}
       <div
         ref={comboRef}
         className={cn(
